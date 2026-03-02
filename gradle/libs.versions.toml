@@ -5,7 +5,14 @@ coreKtx = "1.17.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.12.4"
 kotlin = "2.3.10"
-composeBom = "2026.02.00"
+composeBom = "2026.02.01"
+kotlinxSerializationCore = "1.10.0"
+koin = "4.2.0-RC1"
+koin-annotation = "2.3.1"
+nav3Core = "1.0.1"
+lifecycleViewmodelNav3 = "2.10.0"
+kotlin-coroutine = "1.10.2"
+ksp = "2.3.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -21,8 +28,55 @@ camera-core = { module = "androidx.camera:camera-core", version.ref = "camera" }
 camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camera" }
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camera" }
 androidx-camera-compose = { module = "androidx.camera:camera-compose", version.ref = "camera" }
+accompanist-permissions = "com.google.accompanist:accompanist-permissions:0.37.3"
+
+
+androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
+androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
+androidx-lifecycle-viewmodel-navigation3 = { module = "androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "lifecycleViewmodelNav3" }
+
+
+## Koin
+koin-android = { module = "io.insert-koin:koin-android", version.ref = "koin" }
+koin-androidx-compose = { module = "io.insert-koin:koin-androidx-compose", version.ref = "koin" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel", version.ref = "koin" }
+koin-ksp = { module = "io.insert-koin:koin-ksp-compiler", version.ref = "koin-annotation" }
+koin-annotation = { module = "io.insert-koin:koin-annotations", version.ref = "koin-annotation" }
+
+## Kotlin
+kotlin-coroutine-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutine" }
+kotlin-coroutine-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlin-coroutine" }
+kotlin-serialization = "org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0"
+kotlinx-serialization-core = { module = "org.jetbrains.kotlinx:kotlinx-serialization-core", version.ref = "kotlinxSerializationCore" }
 
 [bundles]
+android = [
+    "androidx-core-ktx",
+    "androidx-lifecycle-runtime-ktx",
+    "androidx-activity-compose",
+    "androidx-compose-ui",
+    "androidx-compose-ui-tooling-preview",
+    "androidx-compose-ui-graphics",
+    "androidx-compose-material3",
+    "androidx-lifecycle-viewmodel-navigation3",
+    "androidx-navigation3-runtime",
+    "androidx-navigation3-ui"
+]
+
+koin = [
+    "koin-android",
+    "koin-androidx-compose",
+    "koin-compose-viewmodel",
+    "koin-annotation"
+]
+
+kotlin = [
+    "kotlin-coroutine-android",
+    "kotlin-coroutine-core",
+    "kotlin-serialization",
+    "kotlinx-serialization-core"
+]
+
 camera = [
     "camera-core",
     "camera-camera2",
@@ -33,4 +87,8 @@ camera = [
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 
