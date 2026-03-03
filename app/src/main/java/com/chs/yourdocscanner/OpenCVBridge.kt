@@ -10,4 +10,6 @@ object OpenCVBridge {
         width: Int,
         height: Int
     ): FloatArray
+
+    external fun resetHistory()
 }

@@ -9,6 +9,5 @@ sealed interface DocumentScanIntent {
         val context: Context,
         val lifecycle: LifecycleOwner
     ) : DocumentScanIntent
-    data class DetectDocument(val floatArray: FloatArray) : DocumentScanIntent
     data object ClickCaptureButton : DocumentScanIntent
 }

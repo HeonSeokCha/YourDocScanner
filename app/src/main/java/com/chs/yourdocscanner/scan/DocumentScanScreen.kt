@@ -1,5 +1,6 @@
 package com.chs.yourdocscanner.scan
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -29,12 +30,20 @@ fun DocumentScanScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
 
-    CameraPreview(
-        modifier = Modifier
-            .fillMaxSize(),
-        surfaceRequest = state.surfaceRequest,
-        onBindCamera = {
-            onIntent(DocumentScanIntent.BindCamera(context, lifecycleOwner))
-        }
-    )
+    Box(modifier = Modifier.fillMaxSize()) {
+        CameraPreview(
+            modifier = Modifier
+                .fillMaxSize(),
+            surfaceRequest = state.surfaceRequest,
+            onBindCamera = {
+                onIntent(DocumentScanIntent.BindCamera(context, lifecycleOwner))
+            }
+        )
+
+        DocumentOverlay(
+            quad = state.currentDetectedQuad,
+            modifier = Modifier.fillMaxSize()
+        )
+
+    }
 }

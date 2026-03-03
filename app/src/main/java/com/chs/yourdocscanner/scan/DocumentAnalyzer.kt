@@ -1,22 +1,37 @@
 package com.chs.yourdocscanner.scan
 
+import android.util.Log
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
+import androidx.compose.ui.geometry.Offset
 import com.chs.yourdocscanner.OpenCVBridge
 import java.nio.ByteBuffer
 
 class DocumentAnalyzer(
-    private val onRectDetected: (FloatArray?) -> Unit
+    private val onResult: (DetectedQuad?) -> Unit
 ) : ImageAnalysis.Analyzer {
 
     override fun analyze(image: ImageProxy) {
-        val yuvBytes = image.toNV21ByteArray()
-        val result = OpenCVBridge.detectRectangles(
-            yuvBytes,
+        val yuv = image.toNV21ByteArray()
+        val raw = OpenCVBridge.detectRectangles(
+            yuv,
             image.width,
             image.height
         )
-        onRectDetected(if (result.isEmpty()) null else result)
+
+
+        val quad = if (raw.size >= 9) {
+            DetectedQuad(
+                topLeft = Offset(raw[0], raw[1]),
+                topRight = Offset(raw[2], raw[3]),
+                bottomRight = Offset(raw[4], raw[5]),
+                bottomLeft = Offset(raw[6], raw[7]),
+                confidence = raw[8]
+            )
+        } else null
+
+        Log.e("_DEBUG", quad.toString())
+        onResult(quad)
         image.close()
     }
 
@@ -33,7 +48,6 @@ class DocumentAnalyzer(
         val uSize = uBuffer.remaining()
         val vSize = vBuffer.remaining()
 
-        // NV21 = Y + VU interleaved
         val nv21 = ByteArray(ySize + uSize + vSize)
         yBuffer.get(nv21, 0, ySize)
         vBuffer.get(nv21, ySize, vSize)
