@@ -12,34 +12,46 @@ import androidx.compose.ui.graphics.lerp
 @Composable
 fun DocumentOverlay(
     quad: DetectedQuad?,
+    analysisWidth: Int,
+    analysisHeight: Int,
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier) {
         quad ?: return@Canvas
+        if (analysisWidth == 0 || analysisHeight == 0) return@Canvas
 
-//        val sx = previewWidth.toFloat() / imageWidth
-//        val sy = previewHeight.toFloat() / imageHeight
+        val viewW = size.width
+        val viewH = size.height
+        val imgW  = analysisWidth.toFloat()
+        val imgH  = analysisHeight.toFloat()
+        val scale   = maxOf(viewW / imgW, viewH / imgH)
 
-        fun Offset.scale() = Offset(x, y)
+        val offsetX = (viewW - imgW * scale) / 2f
+        val offsetY = (viewH - imgH * scale) / 2f
 
-        val tl = quad.topLeft.scale()
-        val tr = quad.topRight.scale()
-        val br = quad.bottomRight.scale()
-        val bl = quad.bottomLeft.scale()
+        fun Offset.toScreen() = Offset(
+            x = x * scale + offsetX,
+            y = y * scale + offsetY
+        )
 
-        val overlayColor = lerp(Color(0xFFFFD600), Color(0xFF00C853), quad.confidence)
+        val tl = quad.topLeft.toScreen()
+        val tr = quad.topRight.toScreen()
+        val br = quad.bottomRight.toScreen()
+        val bl = quad.bottomLeft.toScreen()
+
+        val color = lerp(Color(0xFFFFD600), Color(0xFF00C853), quad.confidence)
 
         val path = Path().apply {
             moveTo(tl.x, tl.y); lineTo(tr.x, tr.y)
             lineTo(br.x, br.y); lineTo(bl.x, bl.y)
             close()
         }
-        drawPath(path, overlayColor.copy(alpha = 0.25f))
-        drawPath(path, overlayColor, style = Stroke(width = 4f))
 
+        drawPath(path, color.copy(alpha = 0.25f))
+        drawPath(path, color, style = Stroke(width = 4f))
         listOf(tl, tr, br, bl).forEach {
-            drawCircle(Color.White, radius = 12f, center = it)
-            drawCircle(overlayColor, radius = 8f, center = it)
+            drawCircle(Color.White, radius = 14f, center = it)
+            drawCircle(color,       radius =  9f, center = it)
         }
     }
 }

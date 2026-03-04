@@ -6,9 +6,12 @@ object OpenCVBridge {
     }
 
     external fun detectRectangles(
-        yuvData: ByteArray,
-        width: Int,
-        height: Int
+        yData: ByteArray,
+        yRowStride: Int,
+        uvData: ByteArray,
+        uvRowStride: Int,
+        uvPixelStride: Int,
+        width: Int, height: Int
     ): FloatArray
 
     external fun resetHistory()

@@ -1,6 +1,7 @@
 package com.chs.yourdocscanner.scan
 
 import android.content.Context
+import android.view.Surface
 import androidx.camera.core.CameraSelector.DEFAULT_BACK_CAMERA
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -25,6 +26,8 @@ class DocumentScannerViewModel : ViewModel() {
     private val _state = MutableStateFlow(DocumentState())
     val state: StateFlow<DocumentState> = _state.asStateFlow()
 
+    private val analysisExecutor = Executors.newSingleThreadExecutor()
+
     fun changeIntent(intent: DocumentScanIntent) {
         when (intent) {
             is DocumentScanIntent.BindCamera -> {
@@ -36,6 +39,7 @@ class DocumentScannerViewModel : ViewModel() {
     }
 
     private val cameraPreviewUseCase = Preview.Builder().build().apply {
+
         setSurfaceProvider { newSurfaceRequest ->
             _state.update { it.copy(surfaceRequest = newSurfaceRequest) }
         }
@@ -47,15 +51,19 @@ class DocumentScannerViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             val imageAnalysis = ImageAnalysis.Builder()
+                .setOutputImageRotationEnabled(true)
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                 .build()
                 .also { analysis ->
                     analysis.setAnalyzer(
-                        Executors.newSingleThreadExecutor(),
-                        DocumentAnalyzer { quad ->
+                        analysisExecutor,
+                        DocumentAnalyzer { quad, imgWidth, imgHeight ->
                             _state.update {
-                                it.copy(currentDetectedQuad = quad)
+                                it.copy(
+                                    currentDetectedQuad = quad,
+                                    analysisSize = imgWidth to imgHeight,
+                                )
                             }
                         }
                     )
@@ -76,6 +84,11 @@ class DocumentScannerViewModel : ViewModel() {
                 processCameraProvider.unbindAll()
             }
         }
+    }
+
+    override fun onCleared() {
+        super.onCleared()
+        analysisExecutor.shutdown()
     }
 }
 

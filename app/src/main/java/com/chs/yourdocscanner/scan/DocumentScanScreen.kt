@@ -42,8 +42,9 @@ fun DocumentScanScreen(
 
         DocumentOverlay(
             quad = state.currentDetectedQuad,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            analysisWidth  = state.analysisSize.first,
+            analysisHeight = state.analysisSize.second,
         )
-
     }
 }
