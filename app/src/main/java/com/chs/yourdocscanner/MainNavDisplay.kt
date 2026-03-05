@@ -9,6 +9,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import com.chs.yourdocscanner.permission.PermissionScreen
+import com.chs.yourdocscanner.result.ScanResultScreenRoot
 import com.chs.yourdocscanner.scan.DocumentScanScreenRoot
 import com.chs.yourdocscanner.scan.DocumentScannerViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -37,6 +38,10 @@ fun MainNavDisplay(
             entry<YourDocScannerScreens.DocumentScannerScreen> {
                 val viewModel: DocumentScannerViewModel = koinViewModel()
                 DocumentScanScreenRoot(viewModel = viewModel)
+            }
+
+            entry<YourDocScannerScreens.ScanResultScreen> {
+                ScanResultScreenRoot()
             }
         }
     )

@@ -3,6 +3,7 @@ package com.chs.yourdocscanner.scan
 import android.util.Log
 import androidx.camera.compose.CameraXViewfinder
 import androidx.camera.core.SurfaceRequest
+import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier

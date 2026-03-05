@@ -6,37 +6,38 @@ import androidx.compose.ui.geometry.Offset
 import com.chs.yourdocscanner.OpenCVBridge
 
 class DocumentAnalyzer(
-    private val onResult: (quad: DetectedQuad?, imageWidth: Int, imageHeight: Int) -> Unit
+    private val onResult: (DetectedQuad?) -> Unit
 ) : ImageAnalysis.Analyzer {
 
     override fun analyze(image: ImageProxy) {
-        val yPlane  = image.planes[0]
-        val uPlane  = image.planes[1]
+        val yuv = image.toNV21ByteArray()
+        val raw = OpenCVBridge.detectRectangles(yuv, image.width, image.height)
 
-        val yData  = yPlane.buffer.toByteArray()
-        val uvData = uPlane.buffer.toByteArray()
-
-        val raw = OpenCVBridge.detectRectangles(
-            yData,  yPlane.rowStride,
-            uvData, uPlane.rowStride, uPlane.pixelStride,
-            image.width, image.height
-        )
-
-        val quad = if (raw.size >= 9 && raw[8] > 0f) {
+        val quad = if (raw.size >= 9) {
             DetectedQuad(
-                topLeft     = Offset(raw[0], raw[1]),
-                topRight    = Offset(raw[2], raw[3]),
+                topLeft = Offset(raw[0], raw[1]),
+                topRight = Offset(raw[2], raw[3]),
                 bottomRight = Offset(raw[4], raw[5]),
-                bottomLeft  = Offset(raw[6], raw[7]),
-                confidence  = raw[8]
+                bottomLeft = Offset(raw[6], raw[7]),
+                confidence = raw[8],
+                imageWidth = image.width,
+                imageHeight = image.height,
+                rotationDegrees = image.imageInfo.rotationDegrees
             )
         } else null
 
-        onResult(quad, image.width, image.height)
+        onResult(quad)
         image.close()
     }
 
-    private fun java.nio.ByteBuffer.toByteArray(): ByteArray {
-        rewind(); return ByteArray(remaining()).also { get(it) }
+    private fun ImageProxy.toNV21ByteArray(): ByteArray {
+        val y = planes[0].buffer
+        val u = planes[1].buffer
+        val v = planes[2].buffer
+        val nv21 = ByteArray(y.remaining() + u.remaining() + v.remaining())
+        y.get(nv21, 0, y.remaining())
+        v.get(nv21, y.capacity(), v.remaining())
+        u.get(nv21, y.capacity() + v.capacity(), u.remaining())
+        return nv21
     }
 }

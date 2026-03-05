@@ -12,5 +12,5 @@ sealed interface YourDocScannerScreens : NavKey {
     @Serializable
     data object CropScreen : YourDocScannerScreens
     @Serializable
-    data object ResultScreen : YourDocScannerScreens
+    data object ScanResultScreen : YourDocScannerScreens
 }

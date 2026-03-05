@@ -11,6 +11,7 @@ import androidx.camera.lifecycle.awaitInstance
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.chs.yourdocscanner.OpenCVBridge
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -51,19 +52,15 @@ class DocumentScannerViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             val imageAnalysis = ImageAnalysis.Builder()
-                .setOutputImageRotationEnabled(true)
                 .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
                 .build()
                 .also { analysis ->
                     analysis.setAnalyzer(
                         analysisExecutor,
-                        DocumentAnalyzer { quad, imgWidth, imgHeight ->
+                        DocumentAnalyzer { quad ->
                             _state.update {
-                                it.copy(
-                                    currentDetectedQuad = quad,
-                                    analysisSize = imgWidth to imgHeight,
-                                )
+                                it.copy(currentDetectedQuad = quad)
                             }
                         }
                     )
@@ -88,6 +85,7 @@ class DocumentScannerViewModel : ViewModel() {
 
     override fun onCleared() {
         super.onCleared()
+        OpenCVBridge.resetHistory()
         analysisExecutor.shutdown()
     }
 }

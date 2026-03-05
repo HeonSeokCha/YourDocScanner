@@ -1,10 +1,12 @@
 package com.chs.yourdocscanner.scan
 
+import androidx.camera.viewfinder.compose.MutableCoordinateTransformer
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.LifecycleOwner
@@ -43,8 +45,6 @@ fun DocumentScanScreen(
         DocumentOverlay(
             quad = state.currentDetectedQuad,
             modifier = Modifier.fillMaxSize(),
-            analysisWidth  = state.analysisSize.first,
-            analysisHeight = state.analysisSize.second,
         )
     }
 }

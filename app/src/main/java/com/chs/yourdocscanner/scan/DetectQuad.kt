@@ -7,5 +7,8 @@ data class DetectedQuad(
     val topRight: Offset,
     val bottomRight: Offset,
     val bottomLeft: Offset,
-    val confidence: Float
+    val confidence: Float,
+    val imageWidth: Int,
+    val imageHeight: Int,
+    val rotationDegrees: Int
 )

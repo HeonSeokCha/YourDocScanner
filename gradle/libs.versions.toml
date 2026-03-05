@@ -13,6 +13,7 @@ nav3Core = "1.0.1"
 lifecycleViewmodelNav3 = "2.10.0"
 kotlin-coroutine = "1.10.2"
 ksp = "2.3.6"
+uiGeometry = "1.10.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
