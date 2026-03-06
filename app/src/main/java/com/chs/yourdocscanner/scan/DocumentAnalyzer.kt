@@ -4,6 +4,7 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.compose.ui.geometry.Offset
 import com.chs.yourdocscanner.OpenCVBridge
+import com.chs.yourdocscanner.toNV21ByteArray
 
 class DocumentAnalyzer(
     private val onResult: (DetectedQuad?) -> Unit
@@ -28,16 +29,5 @@ class DocumentAnalyzer(
 
         onResult(quad)
         image.close()
-    }
-
-    private fun ImageProxy.toNV21ByteArray(): ByteArray {
-        val y = planes[0].buffer
-        val u = planes[1].buffer
-        val v = planes[2].buffer
-        val nv21 = ByteArray(y.remaining() + u.remaining() + v.remaining())
-        y.get(nv21, 0, y.remaining())
-        v.get(nv21, y.capacity(), v.remaining())
-        u.get(nv21, y.capacity() + v.capacity(), u.remaining())
-        return nv21
     }
 }

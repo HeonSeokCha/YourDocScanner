@@ -4,6 +4,7 @@
 #include <vector>
 #include <numeric>
 #include <deque>
+#include <android/bitmap.h>
 
 #define LOG_TAG "DocScanner"
 #define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
@@ -249,4 +250,77 @@ Java_com_chs_yourdocscanner_OpenCVBridge_resetHistory(
         JNIEnv *, jobject
 ) {
     g_history.clear();
+}
+
+
+extern "C" JNIEXPORT jobject JNICALL
+Java_com_chs_yourdocscanner_OpenCVBridge_warpDocument(
+        JNIEnv *env,
+        jobject,
+        jobject bitmapIn,
+        jfloatArray points
+) {
+    AndroidBitmapInfo info;
+    AndroidBitmap_getInfo(env, bitmapIn, &info);
+
+    void *pixels;
+    AndroidBitmap_lockPixels(env, bitmapIn, &pixels);
+    Mat src(info.height, info.width, CV_8UC4, pixels);
+    Mat srcBgr;
+    cvtColor(src, srcBgr, COLOR_RGBA2BGR);
+    AndroidBitmap_unlockPixels(env, bitmapIn);
+
+    jfloat *pts = env->GetFloatArrayElements(points, nullptr);
+    vector<Point2f> srcPts = {
+            {pts[0], pts[1]},  // TL
+            {pts[2], pts[3]},  // TR
+            {pts[4], pts[5]},  // BR
+            {pts[6], pts[7]}   // BL
+    };
+    env->ReleaseFloatArrayElements(points, pts, JNI_ABORT);
+
+    double topW    = norm(srcPts[1] - srcPts[0]);
+    double bottomW = norm(srcPts[2] - srcPts[3]);
+    double leftH   = norm(srcPts[3] - srcPts[0]);
+    double rightH  = norm(srcPts[2] - srcPts[1]);
+
+    int dstW = static_cast<int>((topW + bottomW) / 2.0);
+    int dstH = static_cast<int>((leftH + rightH) / 2.0);
+
+    if (dstW <= 0 || dstH <= 0) return nullptr;
+
+    vector<Point2f> dstPts = {
+            {0.f,            0.f           },  // TL
+            {(float)dstW,    0.f           },  // TR
+            {(float)dstW,    (float)dstH   },  // BR
+            {0.f,            (float)dstH   }   // BL
+    };
+
+    Mat M   = getPerspectiveTransform(srcPts, dstPts);
+    Mat dst;
+    warpPerspective(srcBgr, dst, M, Size(dstW, dstH),
+            INTER_LINEAR, BORDER_CONSTANT, Scalar(255, 255, 255));
+
+    Mat rgba;
+    cvtColor(dst, rgba, COLOR_BGR2RGBA);
+
+    jclass bitmapClass   = env->FindClass("android/graphics/Bitmap");
+    jmethodID createBitmap = env->GetStaticMethodID(
+            bitmapClass, "createBitmap",
+            "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;"
+    );
+    jclass configClass   = env->FindClass("android/graphics/Bitmap$Config");
+    jfieldID argb8888    = env->GetStaticFieldID(configClass, "ARGB_8888",
+            "Landroid/graphics/Bitmap$Config;");
+    jobject config       = env->GetStaticObjectField(configClass, argb8888);
+    jobject bitmapOut    = env->CallStaticObjectMethod(
+            bitmapClass, createBitmap, dstW, dstH, config
+    );
+
+    void *outPixels;
+    AndroidBitmap_lockPixels(env, bitmapOut, &outPixels);
+    memcpy(outPixels, rgba.data, rgba.total() * rgba.elemSize());
+    AndroidBitmap_unlockPixels(env, bitmapOut);
+
+    return bitmapOut;
 }

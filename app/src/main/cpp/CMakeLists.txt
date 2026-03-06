@@ -15,5 +15,6 @@ target_link_libraries(
     native-lib
     ${OpenCV_LIBS}
     android
+    jnigraphics
     log
 )

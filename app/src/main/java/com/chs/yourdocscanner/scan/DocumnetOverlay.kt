@@ -28,30 +28,33 @@ fun DocumentOverlay(
 
         when (quad.rotationDegrees) {
             90 -> {
-                displayW    = srcH
-                displayH    = srcW
+                displayW = srcH
+                displayH = srcW
                 rotatePoint = { p -> Offset(srcH - p.y, p.x) }
             }
+
             180 -> {
-                displayW    = srcW
-                displayH    = srcH
+                displayW = srcW
+                displayH = srcH
                 rotatePoint = { p -> Offset(srcW - p.x, srcH - p.y) }
             }
+
             270 -> {
-                displayW    = srcH
-                displayH    = srcW
+                displayW = srcH
+                displayH = srcW
                 rotatePoint = { p -> Offset(p.y, srcW - p.x) }
             }
+
             else -> {
-                displayW    = srcW
-                displayH    = srcH
+                displayW = srcW
+                displayH = srcH
                 rotatePoint = { p -> p }
             }
         }
 
-        val scale  = maxOf(canvasW / displayW, canvasH / displayH)
-        val dx     = (canvasW - displayW * scale) / 2f
-        val dy     = (canvasH - displayH * scale) / 2f
+        val scale = maxOf(canvasW / displayW, canvasH / displayH)
+        val dx = (canvasW - displayW * scale) / 2f
+        val dy = (canvasH - displayH * scale) / 2f
 
         fun Offset.toCanvas(): Offset {
             val rotated = rotatePoint(this)
@@ -85,7 +88,7 @@ fun DocumentOverlay(
 
         listOf(tl, tr, br, bl).forEach { corner ->
             drawCircle(Color.White, radius = 14f, center = corner)
-            drawCircle(color,       radius =  9f, center = corner)
+            drawCircle(color, radius = 9f, center = corner)
         }
     }
 }

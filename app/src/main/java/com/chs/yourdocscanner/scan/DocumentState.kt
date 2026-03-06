@@ -5,5 +5,6 @@ import androidx.camera.core.SurfaceRequest
 data class DocumentState(
     val surfaceRequest: SurfaceRequest? = null,
     val currentDetectedQuad: DetectedQuad? = null,
+    val isCapturing: Boolean = false,
     val showDetectingMessage: Boolean = false
 )
