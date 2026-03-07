@@ -55,7 +55,9 @@ class DocumentScannerViewModel : ViewModel() {
                 bindToCamera(intent.context, intent.lifecycle)
             }
 
-            DocumentScanIntent.ClickCaptureButton -> TODO()
+            DocumentScanIntent.ClickCaptureButton -> { }
+            DocumentScanIntent.ClickCapture -> { }
+            DocumentScanIntent.ClickCaptureModeChange -> { _state.update { it.copy(isAutoCapture = !it.isAutoCapture) }}
         }
     }
 

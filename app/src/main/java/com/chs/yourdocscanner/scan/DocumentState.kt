@@ -6,5 +6,6 @@ data class DocumentState(
     val surfaceRequest: SurfaceRequest? = null,
     val currentDetectedQuad: DetectedQuad? = null,
     val isCapturing: Boolean = false,
+    val isAutoCapture: Boolean = true,
     val showDetectingMessage: Boolean = false
 )

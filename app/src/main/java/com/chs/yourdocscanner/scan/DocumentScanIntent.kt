@@ -10,4 +10,7 @@ sealed interface DocumentScanIntent {
         val lifecycle: LifecycleOwner
     ) : DocumentScanIntent
     data object ClickCaptureButton : DocumentScanIntent
+
+    data object ClickCapture : DocumentScanIntent
+    data object ClickCaptureModeChange : DocumentScanIntent
 }
