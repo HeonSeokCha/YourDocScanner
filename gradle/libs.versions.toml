@@ -32,6 +32,8 @@ androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", versi
 androidx-camera-compose = { module = "androidx.camera:camera-compose", version.ref = "camera" }
 accompanist-permissions = "com.google.accompanist:accompanist-permissions:0.37.3"
 
+mlkit-objectdetect = "com.google.mlkit:object-detection:17.0.2"
+
 
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }

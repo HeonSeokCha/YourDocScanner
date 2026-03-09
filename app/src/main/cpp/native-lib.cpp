@@ -179,70 +179,78 @@ QuadScore detectAtScale(const Mat &edges, const Mat &gray,
 }
 
 
-vector<Point2f> smoothWithHistory(const vector<Point2f> &current) {
-    g_history.push_back(current);
-    if (g_history.size() > SMOOTH_HISTORY)
-        g_history.pop_front();
-
-    vector<Point2f> smoothed(4, Point2f(0, 0));
-    for (const auto &frame: g_history) {
-        for (int i = 0; i < 4; i++)
-            smoothed[i] += frame[i];
-    }
-    float n = static_cast<float>(g_history.size());
-    for (auto &p: smoothed) p *= (1.0f / n);
-
-    return smoothed;
-}
-
-extern "C" JNIEXPORT jfloatArray JNICALL
+extern "C" JNIEXPORT jobject JNICALL
 Java_com_chs_yourdocscanner_OpenCVBridge_detectRectangles(
         JNIEnv *env,
-        jobject,
+        jobject thiz,
         jbyteArray yuvData,
         jint width,
         jint height
 ) {
-    Mat bgr = yuvToBgr(env, yuvData, width, height);
-
-    Mat edges = preprocess(bgr);
+    Mat src = yuvToBgr(env, yuvData, width, height);
 
     Mat gray;
-    cvtColor(bgr, gray, COLOR_BGR2GRAY);
+    cvtColor(src, gray, COLOR_RGBA2GRAY);
 
-    static const float SCALES[] = {1.0f, 0.75f, 0.5f};
-    QuadScore best;
-    best.score = -1.0;
+    GaussianBlur(gray, gray, Size(5.0, 5.0), 0.0);
 
-    for (float scale: SCALES) {
-        QuadScore qs = detectAtScale(edges, gray, width, height, scale);
-        if (qs.score > best.score) {
-            best = qs;
+    Mat edges;
+    Canny(gray, edges, 75.0, 200.0);
+
+
+    vector<vector<Point>> contours;
+    Mat hierarchy;
+    findContours(edges, contours, hierarchy, RETR_LIST, CHAIN_APPROX_SIMPLE);
+
+//    sort(contours.begin(), contours.end(), [](const vector<Point> &a, const vector<Point> &b) {
+//        return contourArea(Mat(a)) > contourArea(Mat(b));
+//    });
+
+    sort(contours.begin(), contours.end(), [](const vector<Point> &a, const vector<Point> &b) {
+        return contourArea(a) > contourArea(b);
+    });
+
+    vector<Point2f> docContour;
+    bool found = false;
+
+    for (auto &contour : contours) {
+        Mat contourF;
+        Mat(contour).convertTo(contourF, CV_32F);
+
+        double peri = arcLength(contourF, true);
+
+        vector<Point2f> approx;
+        approxPolyDP(contourF, approx, 0.02 * peri, true);
+
+        if (approx.size() == 4) {
+            docContour = approx;
+            found = true;
+            break;
         }
-        if (best.score > 0.8) break;
     }
 
-    if (best.poly.empty()) {
-        g_history.clear();
-        return env->NewFloatArray(0);
+    gray.release();
+    edges.release();
+
+    if (!found) return nullptr;
+    // ── 8. vector<Point2f> → Java List<Point> 변환 ───────────────────────────
+    jclass arrayListClass = env->FindClass("java/util/ArrayList");
+    jmethodID arrayListInit = env->GetMethodID(arrayListClass, "<init>", "()V");
+    jmethodID arrayListAdd  = env->GetMethodID(arrayListClass, "add", "(Ljava/lang/Object;)Z");
+    jobject resultList = env->NewObject(arrayListClass, arrayListInit);
+
+    jclass pointClass   = env->FindClass("android/graphics/Point");
+    jmethodID pointInit = env->GetMethodID(pointClass, "<init>", "(II)V");
+
+    for (const auto &pt : docContour) {
+        jobject point = env->NewObject(pointClass, pointInit,
+                static_cast<jint>(pt.x),
+                static_cast<jint>(pt.y));
+        env->CallBooleanMethod(resultList, arrayListAdd, point);
+        env->DeleteLocalRef(point);
     }
 
-    vector<Point2f> corners = sortCornersCW(best.poly);
-
-    refineCorners(gray, corners);
-
-    corners = smoothWithHistory(corners);
-
-    jfloatArray result = env->NewFloatArray(9);
-    jfloat pts[9] = {
-            corners[0].x, corners[0].y,  // TL
-            corners[1].x, corners[1].y,  // TR
-            corners[2].x, corners[2].y,  // BR
-            corners[3].x, corners[3].y,  // BL
-            static_cast<jfloat>(best.score)
-    };
-    env->SetFloatArrayRegion(result, 0, 9, pts);
-    return result;
+    return resultList;
 }
 
 extern "C" JNIEXPORT void JNICALL

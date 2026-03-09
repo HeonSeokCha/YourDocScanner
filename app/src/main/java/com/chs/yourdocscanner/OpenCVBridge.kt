@@ -1,6 +1,7 @@
 package com.chs.yourdocscanner
 
 import android.graphics.Bitmap
+import android.graphics.Point
 
 object OpenCVBridge {
     init {
@@ -11,7 +12,7 @@ object OpenCVBridge {
         yuvData: ByteArray,
         width: Int,
         height: Int
-    ): FloatArray
+    ): List<Point>?
 
     external fun resetHistory()
 
