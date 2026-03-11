@@ -23,9 +23,11 @@ import com.chs.yourdocscanner.applyRotation
 import com.chs.yourdocscanner.toRawBitmap
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -43,11 +45,29 @@ class DocumentScannerViewModel : ViewModel() {
     private val _state = MutableStateFlow(DocumentState())
     val state: StateFlow<DocumentState> = _state.asStateFlow()
 
+    private val _effect: Channel<Exception> = Channel(Channel.BUFFERED)
+    val effect = _effect.receiveAsFlow()
+
     private val cameraExecutor = Executors.newSingleThreadExecutor()
 
     val imageCapture = ImageCapture.Builder()
         .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
         .build()
+
+    val imageAnalysis = ImageAnalysis.Builder()
+        .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+        .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_NV21)
+        .build()
+        .also { analysis ->
+            analysis.setAnalyzer(
+                cameraExecutor,
+                DocumentAnalyzer { quad ->
+                    _state.update {
+                        it.copy(currentDetectedQuad = quad)
+                    }
+                }
+            )
+        }
 
     fun changeIntent(intent: DocumentScanIntent) {
         when (intent) {
@@ -55,9 +75,11 @@ class DocumentScannerViewModel : ViewModel() {
                 bindToCamera(intent.context, intent.lifecycle)
             }
 
-            DocumentScanIntent.ClickCaptureButton -> { }
-            DocumentScanIntent.ClickCapture -> { }
-            DocumentScanIntent.ClickCaptureModeChange -> { _state.update { it.copy(isAutoCapture = !it.isAutoCapture) }}
+            DocumentScanIntent.ClickCapture -> captureImage()
+
+            is DocumentScanIntent.ClickCaptureModeChange -> {
+                _state.update { it.copy(isAutoCapture = intent.modeState) }
+            }
         }
     }
 
@@ -73,21 +95,6 @@ class DocumentScannerViewModel : ViewModel() {
         lifecycleOwner: LifecycleOwner
     ) {
         viewModelScope.launch {
-            val imageAnalysis = ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-//                .setOutputImageFormat(ImageAnalysis.OUTPUT_IMAGE_FORMAT_YUV_420_888)
-                .build()
-                .also { analysis ->
-                    analysis.setAnalyzer(
-                        cameraExecutor,
-                        DocumentAnalyzer { quad ->
-                            _state.update {
-                                it.copy(currentDetectedQuad = quad)
-                            }
-                        }
-                    )
-                }
-
             val processCameraProvider = ProcessCameraProvider.awaitInstance(appContext)
 
             processCameraProvider.bindToLifecycle(
@@ -95,64 +102,70 @@ class DocumentScannerViewModel : ViewModel() {
                 DEFAULT_BACK_CAMERA,
                 cameraPreviewUseCase,
                 imageAnalysis,
-
+                imageCapture
             )
 
             try {
                 awaitCancellation()
+            } catch (e: Exception) {
+                _effect.trySend(e)
             } finally {
                 processCameraProvider.unbindAll()
             }
         }
     }
 
-    suspend fun captureAndCrop(quad: DetectedQuad) = withContext(Dispatchers.IO) {
+//    suspend fun captureAndCrop(quad: DetectedQuad) = withContext(Dispatchers.IO) {
+//
+//        val scaleX = rawBitmap.width.toFloat() / quad.imageWidth.toFloat()
+//        val scaleY = rawBitmap.height.toFloat() / quad.imageHeight.toFloat()
+//
+//        val points = floatArrayOf(
+//            quad.topLeft.x * scaleX, quad.topLeft.y * scaleY,
+//            quad.topRight.x * scaleX, quad.topRight.y * scaleY,
+//            quad.bottomRight.x * scaleX, quad.bottomRight.y * scaleY,
+//            quad.bottomLeft.x * scaleX, quad.bottomLeft.y * scaleY,
+//        )
+//
+//        val warpedBitmap = OpenCVBridge.warpDocument(rawBitmap, points)
+//            ?: return@withContext null
+//        rawBitmap.recycle()
+//
+//        val finalBitmap = warpedBitmap.applyRotation(rotationDegrees)
+//    }
 
-            val (rawBitmap, rotationDegrees) = awaitCapture()
-                ?: return@withContext null
-
-            val scaleX = rawBitmap.width.toFloat()  / quad.imageWidth.toFloat()
-            val scaleY = rawBitmap.height.toFloat() / quad.imageHeight.toFloat()
-
-            val points = floatArrayOf(
-                quad.topLeft.x     * scaleX,  quad.topLeft.y     * scaleY,
-                quad.topRight.x    * scaleX,  quad.topRight.y    * scaleY,
-                quad.bottomRight.x * scaleX,  quad.bottomRight.y * scaleY,
-                quad.bottomLeft.x  * scaleX,  quad.bottomLeft.y  * scaleY,
-            )
-
-            val warpedBitmap = OpenCVBridge.warpDocument(rawBitmap, points)
-                ?: return@withContext null
-            rawBitmap.recycle()
-
-            val finalBitmap = warpedBitmap.applyRotation(rotationDegrees)
-        }
-
-    private suspend fun awaitCapture(): CaptureResult? =
-        suspendCancellableCoroutine { cont ->
-            imageCapture.takePicture(
-                cameraExecutor,
-                object : ImageCapture.OnImageCapturedCallback() {
-                    override fun onCaptureSuccess(image: ImageProxy) {
-                        val rotation = image.imageInfo.rotationDegrees
-                        val bitmap   = image.toRawBitmap()
-                        image.close()
-                        if (bitmap != null) {
-                            cont.resume(CaptureResult(bitmap, rotation)) {}
-                        } else {
-                            cont.cancel(IOException("Bitmap decode failed"))
-                        }
-                    }
-                    override fun onError(e: ImageCaptureException) {
-                        cont.cancel(e)
-                    }
+    fun captureImage() {
+        imageCapture.takePicture(
+            cameraExecutor,
+            object : ImageCapture.OnImageCapturedCallback() {
+                override fun onCaptureStarted() {
+                    super.onCaptureStarted()
+                    _state.update { it.copy(isCapturing = true) }
                 }
-            )
-        }
+
+                override fun onCaptureSuccess(image: ImageProxy) {
+                    val rotation = image.imageInfo.rotationDegrees
+                    val bitmap = image.toRawBitmap()?.applyRotation(rotation)
+                    image.close()
+
+                    if (bitmap == null) {
+                        _state.update { it.copy(isCapturing = false) }
+                        return
+                    }
+
+                    _state.update { it.copy(isCapturing = false) }
+
+                }
+
+                override fun onError(e: ImageCaptureException) {
+                    _effect.trySend(e)
+                }
+            }
+        )
+    }
 
     override fun onCleared() {
         super.onCleared()
-        OpenCVBridge.resetHistory()
         cameraExecutor.shutdown()
     }
 }

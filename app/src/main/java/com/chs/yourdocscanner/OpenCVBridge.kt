@@ -14,7 +14,5 @@ object OpenCVBridge {
         height: Int
     ): List<Point>?
 
-    external fun resetHistory()
-
     external fun warpDocument(bitmap: Bitmap, points: FloatArray): Bitmap?
 }

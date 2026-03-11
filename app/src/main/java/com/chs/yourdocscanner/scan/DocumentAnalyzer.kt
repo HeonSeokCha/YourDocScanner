@@ -1,7 +1,5 @@
 package com.chs.yourdocscanner.scan
 
-import android.graphics.Point
-import android.util.Log
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -9,21 +7,10 @@ import androidx.camera.core.ImageProxy
 import androidx.compose.ui.geometry.Offset
 import com.chs.yourdocscanner.OpenCVBridge
 import com.chs.yourdocscanner.toNV21ByteArray
-import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.objects.ObjectDetection
-import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions
 
 class DocumentAnalyzer(
     private val onResult: (DetectedQuad?) -> Unit
 ) : ImageAnalysis.Analyzer {
-
-    val options = ObjectDetectorOptions.Builder()
-        .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-        .enableClassification()
-        .build()
-
-    val objectDetector = ObjectDetection.getClient(options)
-
 
     @OptIn(ExperimentalGetImage::class)
     override fun analyze(image: ImageProxy) {
@@ -44,7 +31,7 @@ class DocumentAnalyzer(
             )
         } else null
 
-        onResult(quad)
         image.close()
+        onResult(quad)
     }
 }

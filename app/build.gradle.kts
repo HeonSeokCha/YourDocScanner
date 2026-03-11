@@ -64,7 +64,7 @@ dependencies {
     implementation(libs.bundles.camera)
     implementation(libs.accompanist.permissions)
 
-    implementation(libs.mlkit.objectdetect)
+//    implementation(libs.mlkit.objectdetect)
 
     ksp(libs.koin.ksp)
 }

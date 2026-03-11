@@ -62,9 +62,9 @@ fun DocumentScanScreen(
 
         CameraBottomControls(
             modifier = Modifier.weight(0.3f),
-            onCaptureClick = { onIntent(DocumentScanIntent.ClickCaptureButton) },
+            onCaptureClick = { onIntent(DocumentScanIntent.ClickCapture) },
             isAutoCapture = state.isAutoCapture,
-            onModeChange = { onIntent(DocumentScanIntent.ClickCaptureModeChange) },
+            onModeChange = { onIntent(DocumentScanIntent.ClickCaptureModeChange(it)) },
         )
     }
 }
