@@ -10,7 +10,7 @@ sealed interface YourDocScannerScreens : NavKey {
     @Serializable
     data object DocumentScannerScreen : YourDocScannerScreens
     @Serializable
-    data object CropScreen : YourDocScannerScreens
+    data class CropScreen(val filePath: String) : YourDocScannerScreens
     @Serializable
     data object ScanResultScreen : YourDocScannerScreens
 }

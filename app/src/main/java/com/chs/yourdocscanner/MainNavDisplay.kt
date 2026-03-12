@@ -8,11 +8,14 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.chs.yourdocscanner.crop.CropScreenRoot
+import com.chs.yourdocscanner.crop.CropViewModel
 import com.chs.yourdocscanner.permission.PermissionScreen
 import com.chs.yourdocscanner.result.ScanResultScreenRoot
 import com.chs.yourdocscanner.scan.DocumentScanScreenRoot
 import com.chs.yourdocscanner.scan.DocumentScannerViewModel
 import org.koin.androidx.compose.koinViewModel
+import org.koin.core.parameter.parametersOf
 
 @Composable
 fun MainNavDisplay(
@@ -37,7 +40,17 @@ fun MainNavDisplay(
 
             entry<YourDocScannerScreens.DocumentScannerScreen> {
                 val viewModel: DocumentScannerViewModel = koinViewModel()
-                DocumentScanScreenRoot(viewModel = viewModel)
+                DocumentScanScreenRoot(viewModel = viewModel) {
+                    backStack.removeLastOrNull()
+                    backStack.add(YourDocScannerScreens.CropScreen(it))
+                }
+            }
+
+            entry<YourDocScannerScreens.CropScreen> { key ->
+                val viewModel: CropViewModel = koinViewModel<CropViewModel> {
+                    parametersOf(key.filePath)
+                }
+                CropScreenRoot(viewModel)
             }
 
             entry<YourDocScannerScreens.ScanResultScreen> {
