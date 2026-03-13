@@ -1,4 +1,4 @@
-package com.chs.yourdocscanner.scan
+package com.chs.yourdocscanner.crop
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
@@ -7,9 +7,11 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.lerp
+import com.chs.yourdocscanner.scan.DetectedQuad
 
 @Composable
-fun DocumentOverlay(
+fun CropOverlay(
     quad: DetectedQuad?,
     modifier: Modifier = Modifier
 ) {

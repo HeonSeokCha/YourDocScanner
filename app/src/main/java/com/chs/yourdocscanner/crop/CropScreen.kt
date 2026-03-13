@@ -2,10 +2,12 @@ package com.chs.yourdocscanner.crop
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -24,11 +26,14 @@ fun CropScreen(
 ) {
     Column(
         modifier = Modifier
-            .fillMaxSize()
+            .fillMaxSize(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         if (state.originBitmap == null) return@Column
-        Canvas(modifier = Modifier.fillMaxSize()) {
-            drawImage(state.originBitmap.asImageBitmap())
-        }
+        Image(
+            state.originBitmap.asImageBitmap(),
+            contentDescription = null
+        )
     }
 }

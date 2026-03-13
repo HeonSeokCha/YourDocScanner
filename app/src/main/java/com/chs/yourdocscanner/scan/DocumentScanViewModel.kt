@@ -44,7 +44,7 @@ import java.util.concurrent.Executors
 @KoinViewModel
 class DocumentScannerViewModel(
     private val scanRepository: ScanRepository
-): ViewModel() {
+) : ViewModel() {
 
     private val _state = MutableStateFlow(DocumentState())
     val state: StateFlow<DocumentState> = _state.asStateFlow()
@@ -122,25 +122,28 @@ class DocumentScannerViewModel(
     fun captureAndCrop() = viewModelScope.launch {
         val (rawBitmap, rotationDegrees) = awaitCapture()
             ?: return@launch
-//
-//        val scaleX = rawBitmap.width.toFloat() / quad.imageWidth.toFloat()
-//        val scaleY = rawBitmap.height.toFloat() / quad.imageHeight.toFloat()
-//
-//        val points = floatArrayOf(
-//            quad.topLeft.x * scaleX, quad.topLeft.y * scaleY,
-//            quad.topRight.x * scaleX, quad.topRight.y * scaleY,
-//            quad.bottomRight.x * scaleX, quad.bottomRight.y * scaleY,
-//            quad.bottomLeft.x * scaleX, quad.bottomLeft.y * scaleY,
-//        )
-//
-//        val warpedBitmap = OpenCVBridge.warpDocument(rawBitmap, points)
-//            ?: return@withContext null
-//        rawBitmap.recycle()
-//
-//        val finalBitmap = warpedBitmap.applyRotation(rotationDegrees)
+        val quad = _state.value.currentDetectedQuad
 
-        val file: File? = scanRepository.saveImage(rawBitmap.applyRotation(rotationDegrees))
-        rawBitmap.recycle()
+        val finalBitmap = if (quad != null) {
+            val scaleX = rawBitmap.width.toFloat() / quad.imageWidth.toFloat()
+            val scaleY = rawBitmap.height.toFloat() / quad.imageHeight.toFloat()
+
+            val points = floatArrayOf(
+                quad.topLeft.x * scaleX, quad.topLeft.y * scaleY,
+                quad.topRight.x * scaleX, quad.topRight.y * scaleY,
+                quad.bottomRight.x * scaleX, quad.bottomRight.y * scaleY,
+                quad.bottomLeft.x * scaleX, quad.bottomLeft.y * scaleY,
+            )
+
+            val warpedBitmap = OpenCVBridge.warpDocument(rawBitmap, points) ?: return@launch
+            rawBitmap.recycle()
+            warpedBitmap.applyRotation(rotationDegrees)
+        } else {
+            rawBitmap
+        }
+
+        val file: File? = scanRepository.saveImage(finalBitmap.applyRotation(rotationDegrees))
+        finalBitmap.recycle()
 
         if (file == null) {
             _effect.trySend(ScanEffect.OnError)

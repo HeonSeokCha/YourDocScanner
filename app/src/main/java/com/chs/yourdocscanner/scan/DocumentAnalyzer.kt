@@ -24,7 +24,6 @@ class DocumentAnalyzer(
                 topRight = Offset(raw[1].x.toFloat(), raw[1].y.toFloat()),
                 bottomRight = Offset(raw[2].x.toFloat(), raw[2].y.toFloat()),
                 bottomLeft = Offset(raw[3].x.toFloat(), raw[3].y.toFloat()),
-                confidence = 0f,
                 imageWidth = image.width,
                 imageHeight = image.height,
                 rotationDegrees = image.imageInfo.rotationDegrees
