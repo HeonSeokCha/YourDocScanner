@@ -3,6 +3,7 @@ package com.chs.yourdocscanner.crop
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
@@ -17,23 +18,31 @@ fun CropScreenRoot(
     viewModel: CropViewModel
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    CropScreen(state)
+    CropScreen(
+        state = state,
+        onIntent = viewModel::handleIntent
+    )
 }
 
 @Composable
 fun CropScreen(
-    state: CropState
+    state: CropState,
+    onIntent: (CropIntent) -> Unit
 ) {
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (state.originBitmap == null) return@Column
+
+        if (state.originBitmap == null) return@Box
         Image(
             state.originBitmap.asImageBitmap(),
             contentDescription = null
+        )
+
+        CropOverlay(
+            modifier = Modifier.fillMaxSize(),
+//            quad = state.currentQuad
         )
     }
 }

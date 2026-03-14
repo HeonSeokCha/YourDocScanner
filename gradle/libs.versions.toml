@@ -1,19 +1,18 @@
 [versions]
 agp = "9.1.0"
 camera = "1.5.3"
-coreKtx = "1.17.0"
+coreKtx = "1.18.0"
 lifecycleRuntimeKtx = "2.10.0"
-activityCompose = "1.12.4"
+activityCompose = "1.13.0"
 kotlin = "2.3.10"
-composeBom = "2026.02.01"
+composeBom = "2026.03.00"
 kotlinxSerializationCore = "1.10.0"
-koin = "4.2.0-RC1"
+koin = "4.2.0-RC2"
 koin-annotation = "2.3.1"
 nav3Core = "1.0.1"
 lifecycleViewmodelNav3 = "2.10.0"
 kotlin-coroutine = "1.10.2"
 ksp = "2.3.6"
-uiGeometry = "1.10.4"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -31,9 +30,6 @@ camera-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "cam
 androidx-camera-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camera" }
 androidx-camera-compose = { module = "androidx.camera:camera-compose", version.ref = "camera" }
 accompanist-permissions = "com.google.accompanist:accompanist-permissions:0.37.3"
-
-mlkit-objectdetect = "com.google.mlkit:object-detection:17.0.2"
-
 
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "nav3Core" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "nav3Core" }
@@ -96,4 +92,3 @@ android-library = { id = "com.android.library", version.ref = "agp" }
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-
