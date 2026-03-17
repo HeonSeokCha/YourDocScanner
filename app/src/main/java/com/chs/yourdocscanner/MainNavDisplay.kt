@@ -12,6 +12,7 @@ import com.chs.yourdocscanner.crop.CropScreenRoot
 import com.chs.yourdocscanner.crop.CropViewModel
 import com.chs.yourdocscanner.permission.PermissionScreen
 import com.chs.yourdocscanner.result.ScanResultScreenRoot
+import com.chs.yourdocscanner.result.ScanResultViewModel
 import com.chs.yourdocscanner.scan.DocumentScanScreenRoot
 import com.chs.yourdocscanner.scan.DocumentScannerViewModel
 import org.koin.androidx.compose.koinViewModel
@@ -40,10 +41,17 @@ fun MainNavDisplay(
 
             entry<YourDocScannerScreens.DocumentScannerScreen> {
                 val viewModel: DocumentScannerViewModel = koinViewModel()
-                DocumentScanScreenRoot(viewModel = viewModel) {
-                    backStack.removeLastOrNull()
-                    backStack.add(YourDocScannerScreens.CropScreen(it))
-                }
+                DocumentScanScreenRoot(
+                    viewModel = viewModel,
+                    onNavigateCrop = {
+                        backStack.removeLastOrNull()
+                        backStack.add(YourDocScannerScreens.CropScreen(it))
+                    },
+                    onNavigateResult = {
+                        backStack.removeLastOrNull()
+                        backStack.add(YourDocScannerScreens.ScanResultScreen(it))
+                    }
+                )
             }
 
             entry<YourDocScannerScreens.CropScreen> { key ->
@@ -53,8 +61,15 @@ fun MainNavDisplay(
                 CropScreenRoot(viewModel)
             }
 
-            entry<YourDocScannerScreens.ScanResultScreen> {
-                ScanResultScreenRoot()
+            entry<YourDocScannerScreens.ScanResultScreen> { key ->
+                val viewModel: ScanResultViewModel = koinViewModel<ScanResultViewModel> {
+                    parametersOf(key.filePath)
+                }
+                ScanResultScreenRoot(
+                    viewModel = viewModel,
+                    onNavigateCrop = {},
+                    onNavigateScan = {}
+                )
             }
         }
     )

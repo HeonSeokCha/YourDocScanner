@@ -1,5 +1,6 @@
 package com.chs.yourdocscanner.scan
 
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
@@ -18,6 +19,7 @@ class DocumentAnalyzer(
 
         val raw = OpenCVBridge.detectRectangles(yuv, image.width, image.height)
 
+        Log.e("CHS_123", raw.toString())
         val quad = if (raw != null && raw.size == 4) {
             DetectedQuad(
                 topLeft = Offset(raw[0].x.toFloat(), raw[0].y.toFloat()),

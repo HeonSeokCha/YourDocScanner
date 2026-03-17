@@ -93,12 +93,14 @@ Java_com_chs_yourdocscanner_OpenCVBridge_detectRectangles(
 
     Mat filtered;
     bilateralFilter(gray, filtered, 9, 75.0, 75.0);
+//    GaussianBlur(gray, gray, Size(5, 5), 0.0);
 
     Mat edges;
     autoCanny(filtered, edges, 0.33);
 
     Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
     dilate(edges, edges, kernel);
+//    Canny(gray, edges, 75.0, 200.0);
 
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
@@ -109,26 +111,28 @@ Java_com_chs_yourdocscanner_OpenCVBridge_detectRectangles(
     });
 
     vector<Point2f> docContour;
-    bool found = findDocContour(contours, 0.02, docContour);
+    bool found = false;
 
+    for (auto &contour : contours) {
+        Mat contourF;
+        Mat(contour).convertTo(contourF, CV_32F);
 
-    if (!found) {
-        found = findDocContour(contours, 0.05, docContour);
+        double peri = arcLength(contourF, true);
+
+        vector<Point2f> approx;
+        approxPolyDP(contourF, approx, 0.02 * peri, true);
+
+        if (validateQuad(approx, width, height)) {
+            docContour = approx;
+            found = true;
+            break;
+        }
     }
-
-    if (!found) {
-        float w = static_cast<float>(src.cols - 1);
-        float h = static_cast<float>(src.rows - 1);
-        docContour = { {0, 0}, {w, 0}, {w, h}, {0, h} };
-    }
-
-    bool isValid = validateQuad(docContour, width, height);
 
     gray.release();
-    filtered.release();
     edges.release();
 
-    if (!isValid) return nullptr;
+    if (!found) return nullptr;
 
     jclass alClass    = env->FindClass("java/util/ArrayList");
     jmethodID alInit  = env->GetMethodID(alClass, "<init>", "()V");

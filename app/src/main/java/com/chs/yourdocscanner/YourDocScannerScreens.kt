@@ -16,5 +16,7 @@ sealed interface YourDocScannerScreens : NavKey {
         val floatArray: FloatArray? = null
     ) : YourDocScannerScreens
     @Serializable
-    data object ScanResultScreen : YourDocScannerScreens
+    data class ScanResultScreen(
+        val filePath: String
+    ) : YourDocScannerScreens
 }
