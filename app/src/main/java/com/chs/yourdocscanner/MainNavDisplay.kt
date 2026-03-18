@@ -47,9 +47,9 @@ fun MainNavDisplay(
                         backStack.removeLastOrNull()
                         backStack.add(YourDocScannerScreens.CropScreen(it))
                     },
-                    onNavigateResult = {
+                    onNavigateResult = { origin, crop, quad ->
                         backStack.removeLastOrNull()
-                        backStack.add(YourDocScannerScreens.ScanResultScreen(it))
+                        backStack.add(YourDocScannerScreens.ScanResultScreen(origin, crop, quad))
                     }
                 )
             }
@@ -57,18 +57,27 @@ fun MainNavDisplay(
             entry<YourDocScannerScreens.CropScreen> { key ->
                 val viewModel: CropViewModel = koinViewModel<CropViewModel> {
                     parametersOf(key.filePath)
+                    parametersOf(key.detectQuad)
                 }
                 CropScreenRoot(viewModel)
             }
 
             entry<YourDocScannerScreens.ScanResultScreen> { key ->
                 val viewModel: ScanResultViewModel = koinViewModel<ScanResultViewModel> {
-                    parametersOf(key.filePath)
+                    parametersOf(key.cropFilePath)
+//                    parametersOf(key.originFilePath)
+//                    parametersOf(key.detectQuad)
                 }
                 ScanResultScreenRoot(
                     viewModel = viewModel,
-                    onNavigateCrop = {},
-                    onNavigateScan = {}
+                    onNavigateCrop = { filePath, detectQuad ->
+                        backStack.removeLastOrNull()
+                        backStack.add(YourDocScannerScreens.CropScreen(filePath, detectQuad))
+                    },
+                    onNavigateScan = {
+                        backStack.removeLastOrNull()
+                        backStack.add(YourDocScannerScreens.DocumentScannerScreen)
+                    }
                 )
             }
         }

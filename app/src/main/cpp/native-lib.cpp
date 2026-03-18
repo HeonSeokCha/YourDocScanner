@@ -21,7 +21,7 @@ static void autoCanny(const Mat &gray, Mat &edges, double sigma = 0.33) {
     nth_element(vec.begin(), vec.begin() + vec.size() / 2, vec.end());
     double median = vec[vec.size() / 2];
 
-    double lower = max(0.0,   (1.0 - sigma) * median);
+    double lower = max(0.0, (1.0 - sigma) * median);
     double upper = min(255.0, (1.0 + sigma) * median);
     Canny(gray, edges, lower, upper);
 }
@@ -31,7 +31,7 @@ static bool findDocContour(
         double epsilonFactor,
         vector<Point2f> &result
 ) {
-    for (const auto &contour : contours) {
+    for (const auto &contour: contours) {
         vector<Point2f> cf(contour.begin(), contour.end());
         double peri = arcLength(cf, true);
         vector<Point2f> approx;
@@ -113,7 +113,7 @@ Java_com_chs_yourdocscanner_OpenCVBridge_detectRectangles(
     vector<Point2f> docContour;
     bool found = false;
 
-    for (auto &contour : contours) {
+    for (auto &contour: contours) {
         Mat contourF;
         Mat(contour).convertTo(contourF, CV_32F);
 
@@ -134,15 +134,15 @@ Java_com_chs_yourdocscanner_OpenCVBridge_detectRectangles(
 
     if (!found) return nullptr;
 
-    jclass alClass    = env->FindClass("java/util/ArrayList");
-    jmethodID alInit  = env->GetMethodID(alClass, "<init>", "()V");
-    jmethodID alAdd   = env->GetMethodID(alClass, "add", "(Ljava/lang/Object;)Z");
+    jclass alClass = env->FindClass("java/util/ArrayList");
+    jmethodID alInit = env->GetMethodID(alClass, "<init>", "()V");
+    jmethodID alAdd = env->GetMethodID(alClass, "add", "(Ljava/lang/Object;)Z");
     jobject resultList = env->NewObject(alClass, alInit);
 
-    jclass ptClass    = env->FindClass("android/graphics/Point");
-    jmethodID ptInit  = env->GetMethodID(ptClass, "<init>", "(II)V");
+    jclass ptClass = env->FindClass("android/graphics/Point");
+    jmethodID ptInit = env->GetMethodID(ptClass, "<init>", "(II)V");
 
-    for (const auto &pt : docContour) {
+    for (const auto &pt: docContour) {
         jobject point = env->NewObject(ptClass, ptInit,
                 static_cast<jint>(pt.x),
                 static_cast<jint>(pt.y));
@@ -179,47 +179,67 @@ Java_com_chs_yourdocscanner_OpenCVBridge_warpDocument(
     };
     env->ReleaseFloatArrayElements(points, pts, JNI_ABORT);
 
-    double topW    = norm(srcPts[1] - srcPts[0]);
+    double topW = norm(srcPts[1] - srcPts[0]);
     double bottomW = norm(srcPts[2] - srcPts[3]);
-    double leftH   = norm(srcPts[3] - srcPts[0]);
-    double rightH  = norm(srcPts[2] - srcPts[1]);
+    double leftH = norm(srcPts[3] - srcPts[0]);
+    double rightH = norm(srcPts[2] - srcPts[1]);
 
     int dstW = static_cast<int>((topW + bottomW) / 2.0);
     int dstH = static_cast<int>((leftH + rightH) / 2.0);
-
     if (dstW <= 0 || dstH <= 0) return nullptr;
 
     vector<Point2f> dstPts = {
-            {0.f,            0.f           },  // TL
-            {(float)dstW,    0.f           },  // TR
-            {(float)dstW,    (float)dstH   },  // BR
-            {0.f,            (float)dstH   }   // BL
+            {0.f, 0.f},  // TL
+            {(float) dstW, 0.f},  // TR
+            {(float) dstW, (float) dstH},  // BR
+            {0.f, (float) dstH}   // BL
     };
 
-    Mat M   = getPerspectiveTransform(srcPts, dstPts);
-    Mat dst;
-    warpPerspective(srcBgr, dst, M, Size(dstW, dstH),
+    Mat M = getPerspectiveTransform(srcPts, dstPts);
+    Mat warped;
+    warpPerspective(srcBgr, warped, M, Size(dstW, dstH),
             INTER_LINEAR, BORDER_CONSTANT, Scalar(255, 255, 255));
 
-    Mat rgba;
-    cvtColor(dst, rgba, COLOR_BGR2RGBA);
+  flip(warped, warped, 1);
 
-    jclass bitmapClass   = env->FindClass("android/graphics/Bitmap");
+    Mat enhanced;
+    Mat lab;
+    cvtColor(warped, lab, COLOR_BGR2Lab);
+    vector<Mat> channels;
+    split(lab, channels);
+    Ptr<CLAHE> clahe = createCLAHE(2.0, Size(8, 8));
+    clahe->apply(channels[0], channels[0]);
+    merge(channels, lab);
+    cvtColor(lab, enhanced, COLOR_Lab2BGR);
+
+    Mat rgba;
+    cvtColor(enhanced, rgba, COLOR_BGR2RGBA);
+
+    jclass bitmapClass = env->FindClass("android/graphics/Bitmap");
+    jclass configClass = env->FindClass("android/graphics/Bitmap$Config");
+    jfieldID argb8888 = env->GetStaticFieldID(
+            configClass, "ARGB_8888",
+            "Landroid/graphics/Bitmap$Config;");
+    jobject config = env->GetStaticObjectField(configClass, argb8888);
     jmethodID createBitmap = env->GetStaticMethodID(
             bitmapClass, "createBitmap",
-            "(IILandroid/graphics/Bitmap$Config;)Landroid/graphics/Bitmap;"
-    );
-    jclass configClass   = env->FindClass("android/graphics/Bitmap$Config");
-    jfieldID argb8888    = env->GetStaticFieldID(configClass, "ARGB_8888",
-            "Landroid/graphics/Bitmap$Config;");
-    jobject config       = env->GetStaticObjectField(configClass, argb8888);
-    jobject bitmapOut    = env->CallStaticObjectMethod(
-            bitmapClass, createBitmap, dstW, dstH, config
-    );
+            "(IILandroid/graphics/Bitmap$Config;)"
+            "Landroid/graphics/Bitmap;");
+    jobject bitmapOut = env->CallStaticObjectMethod(
+            bitmapClass, createBitmap, dstW, dstH, config);
+
+    AndroidBitmapInfo outInfo;
+    AndroidBitmap_getInfo(env, bitmapOut, &outInfo);
 
     void *outPixels;
     AndroidBitmap_lockPixels(env, bitmapOut, &outPixels);
-    memcpy(outPixels, rgba.data, rgba.total() * rgba.elemSize());
+
+    for (int row = 0; row < dstH; ++row) {
+        uint8_t *dst = static_cast<uint8_t *>(outPixels) + row * outInfo.stride;
+        uint8_t *src = rgba.data + row * rgba.step[0];
+        memcpy(dst, src, dstW * 4);
+    }
+
     AndroidBitmap_unlockPixels(env, bitmapOut);
 
     return bitmapOut;

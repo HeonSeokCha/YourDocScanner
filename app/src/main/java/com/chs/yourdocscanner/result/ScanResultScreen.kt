@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Button
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,10 +21,21 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 @Composable
 fun ScanResultScreenRoot(
     viewModel: ScanResultViewModel,
-    onNavigateCrop: () -> Unit,
+    onNavigateCrop: (String, FloatArray) -> Unit,
     onNavigateScan: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is ScanResultEffect.NavigateCrop -> {
+                    onNavigateCrop(effect.originFilePath, effect.floatArray)
+                }
+                ScanResultEffect.NavigateScan -> onNavigateScan()
+            }
+        }
+    }
 
     ScanResultScreen(
         state = state,
@@ -41,11 +53,11 @@ fun ScanResultScreen(
             .fillMaxSize()
             .background(Color.Black)
     ) {
-        if (state.currentBitmap != null) {
+        if (state.cropBitmap != null) {
             Image(
                 modifier = Modifier
                     .align(Alignment.Center),
-                bitmap = state.currentBitmap.asImageBitmap(),
+                bitmap = state.cropBitmap.asImageBitmap(),
                 contentDescription = null
             )
         }
@@ -55,8 +67,8 @@ fun ScanResultScreen(
                 .fillMaxWidth()
                 .align(Alignment.BottomCenter)
         ) {
-            Button() { }
-            Button() { }
+//            Button() { }
+//            Button() { }
         }
     }
 }

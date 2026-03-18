@@ -22,7 +22,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 fun DocumentScanScreenRoot(
     viewModel: DocumentScannerViewModel,
     onNavigateCrop: (String) -> Unit,
-    onNavigateResult: (String) -> Unit
+    onNavigateResult: (String, String, FloatArray) -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
@@ -31,7 +31,9 @@ fun DocumentScanScreenRoot(
         viewModel.effect.collect { effect ->
             when (effect) {
                 is ScanEffect.NavigateCrop -> onNavigateCrop(effect.filePath)
-                is ScanEffect.NavigateScanResult -> onNavigateResult(effect.filePath)
+                is ScanEffect.NavigateScanResult -> {
+                    onNavigateResult(effect.originFilePath, effect.cropFilePath, effect.detectQuad)
+                }
                 ScanEffect.OnError -> Toast.makeText(context, "Something Error..", Toast.LENGTH_SHORT).show()
             }
         }

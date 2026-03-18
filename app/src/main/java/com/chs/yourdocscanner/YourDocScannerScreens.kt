@@ -13,10 +13,12 @@ sealed interface YourDocScannerScreens : NavKey {
     @Serializable
     data class CropScreen(
         val filePath: String,
-        val floatArray: FloatArray? = null
+        val detectQuad: FloatArray? = null
     ) : YourDocScannerScreens
     @Serializable
     data class ScanResultScreen(
-        val filePath: String
+        val originFilePath: String,
+        val cropFilePath: String,
+        val detectQuad: FloatArray? = null
     ) : YourDocScannerScreens
 }

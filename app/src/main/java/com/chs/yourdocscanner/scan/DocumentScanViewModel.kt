@@ -124,7 +124,7 @@ class DocumentScannerViewModel(
             ?: return@launch
         val quad = _state.value.currentDetectedQuad
 
-        val finalBitmap = if (quad != null) {
+        if (quad != null) {
             val scaleX = rawBitmap.width.toFloat() / quad.imageWidth.toFloat()
             val scaleY = rawBitmap.height.toFloat() / quad.imageHeight.toFloat()
 
@@ -135,22 +135,50 @@ class DocumentScannerViewModel(
                 quad.bottomLeft.x * scaleX, quad.bottomLeft.y * scaleY,
             )
 
-            val warpedBitmap = OpenCVBridge.warpDocument(rawBitmap, points) ?: return@launch
-            rawBitmap.recycle()
-            warpedBitmap.applyRotation(rotationDegrees)
+            val warpedBitmap = OpenCVBridge.warpDocument(rawBitmap, points)
+
+            if (warpedBitmap == null) {
+                val file = saveBitmap(rawBitmap.applyRotation(rotationDegrees))
+                if (file == null) {
+                    _effect.trySend(ScanEffect.OnError)
+                    return@launch
+                }
+                _effect.trySend(ScanEffect.NavigateCrop(file.absolutePath))
+                return@launch
+            }
+            val originFile = saveBitmap(rawBitmap.applyRotation(rotationDegrees))
+
+            val finalBitmap = warpedBitmap.applyRotation(rotationDegrees)
+            val cropFile = saveBitmap(finalBitmap)
+
+            if (originFile == null || cropFile == null) {
+                _effect.trySend(ScanEffect.OnError)
+                return@launch
+            }
+
+            _effect.trySend(
+                ScanEffect.NavigateScanResult(
+                    originFilePath = originFile.absolutePath,
+                    cropFilePath = cropFile.absolutePath,
+                    detectQuad = points
+                )
+            )
+
         } else {
-            rawBitmap
+            val file = saveBitmap(rawBitmap)
+            if (file == null) {
+                _effect.trySend(ScanEffect.OnError)
+                return@launch
+            }
+
+            _effect.trySend(ScanEffect.NavigateCrop(file.absolutePath))
         }
+    }
 
-        val file: File? = scanRepository.saveImage(finalBitmap.applyRotation(rotationDegrees))
-        finalBitmap.recycle()
-
-        if (file == null) {
-            _effect.trySend(ScanEffect.OnError)
-            return@launch
-        }
-
-        _effect.trySend(ScanEffect.NavigateCrop(file.absolutePath))
+    private suspend fun saveBitmap(bitmap: Bitmap): File? {
+        val file: File? = scanRepository.saveImage(bitmap)
+        bitmap.recycle()
+        return file
     }
 
     private suspend fun awaitCapture(): CaptureResult? =
