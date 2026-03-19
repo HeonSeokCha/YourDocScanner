@@ -165,7 +165,7 @@ class DocumentScannerViewModel(
             )
 
         } else {
-            val file = saveBitmap(rawBitmap)
+            val file = saveBitmap(rawBitmap.applyRotation(rotationDegrees))
             if (file == null) {
                 _effect.trySend(ScanEffect.OnError)
                 return@launch

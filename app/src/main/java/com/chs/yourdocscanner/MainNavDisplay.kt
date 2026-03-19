@@ -44,11 +44,9 @@ fun MainNavDisplay(
                 DocumentScanScreenRoot(
                     viewModel = viewModel,
                     onNavigateCrop = {
-                        backStack.removeLastOrNull()
                         backStack.add(YourDocScannerScreens.CropScreen(it))
                     },
                     onNavigateResult = { origin, crop, quad ->
-                        backStack.removeLastOrNull()
                         backStack.add(YourDocScannerScreens.ScanResultScreen(origin, crop, quad))
                     }
                 )
@@ -56,17 +54,21 @@ fun MainNavDisplay(
 
             entry<YourDocScannerScreens.CropScreen> { key ->
                 val viewModel: CropViewModel = koinViewModel<CropViewModel> {
-                    parametersOf(key.filePath)
-                    parametersOf(key.detectQuad)
+                    parametersOf(
+                        key.filePath,
+                        key.detectQuad
+                    )
                 }
                 CropScreenRoot(viewModel)
             }
 
             entry<YourDocScannerScreens.ScanResultScreen> { key ->
                 val viewModel: ScanResultViewModel = koinViewModel<ScanResultViewModel> {
-                    parametersOf(key.cropFilePath)
-//                    parametersOf(key.originFilePath)
-//                    parametersOf(key.detectQuad)
+                    parametersOf(
+                        key.cropFilePath,
+                        key.originFilePath,
+                        key.detectQuad
+                    )
                 }
                 ScanResultScreenRoot(
                     viewModel = viewModel,
@@ -75,7 +77,7 @@ fun MainNavDisplay(
                         backStack.add(YourDocScannerScreens.CropScreen(filePath, detectQuad))
                     },
                     onNavigateScan = {
-                        backStack.removeLastOrNull()
+                        backStack.clear()
                         backStack.add(YourDocScannerScreens.DocumentScannerScreen)
                     }
                 )
