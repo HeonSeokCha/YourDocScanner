@@ -4,6 +4,9 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import androidx.camera.core.ImageProxy
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
+import com.chs.yourdocscanner.scan.DetectedQuad
 
 fun ImageProxy.toRawBitmap(): Bitmap? {
     val buffer = planes[0].buffer
@@ -29,3 +32,73 @@ fun ImageProxy.toNV21ByteArray(): ByteArray {
     u.get(nv21, y.capacity() + v.capacity(), u.remaining())
     return nv21
 }
+
+fun computeFitRect(
+    canvasW: Float, canvasH: Float,
+    imageW: Float,  imageH: Float
+): Rect {
+    val scale  = minOf(canvasW / imageW, canvasH / imageH)
+    val scaledW = imageW * scale
+    val scaledH = imageH * scale
+    val left   = (canvasW - scaledW) / 2f
+    val top    = (canvasH - scaledH) / 2f
+    return Rect(left, top, left + scaledW, top + scaledH)
+}
+
+fun Offset.imageToCanvas(rect: Rect, bitmap: Bitmap): Offset = Offset(
+    x = rect.left + x / bitmap.width  * rect.width,
+    y = rect.top  + y / bitmap.height * rect.height
+)
+
+fun Offset.canvasToImage(rect: Rect, bitmap: Bitmap): Offset = Offset(
+    x = (x - rect.left) / rect.width  * bitmap.width,
+    y = (y - rect.top)  / rect.height * bitmap.height
+)
+
+fun DetectedQuad.toCanvasCorners(rect: Rect, bitmap: Bitmap?): List<Offset>? {
+    if (bitmap == null) return null
+    return listOf(
+        topLeft.imageToCanvas(rect, bitmap),
+        topRight.imageToCanvas(rect, bitmap),
+        bottomRight.imageToCanvas(rect, bitmap),
+        bottomLeft.imageToCanvas(rect, bitmap)
+    )
+}
+
+fun List<Offset>.toImagePoints(rect: Rect, bitmap: Bitmap): FloatArray {
+    val pts = map { it.canvasToImage(rect, bitmap) }
+    return floatArrayOf(
+        pts[0].x, pts[0].y,  // TL
+        pts[1].x, pts[1].y,  // TR
+        pts[2].x, pts[2].y,  // BR
+        pts[3].x, pts[3].y   // BL
+    )
+}
+
+fun Rect.defaultCorners(): List<Offset> = listOf(
+    Offset(left,  top),     // TL
+    Offset(right, top),     // TR
+    Offset(right, bottom),  // BR
+    Offset(left,  bottom)   // BL
+)
+
+fun List<Offset>.indexOfMinDistanceTo(
+    target: Offset,
+    threshold: Float
+): Int {
+    var minDist = Float.MAX_VALUE
+    var minIdx  = -1
+    forEachIndexed { idx, corner ->
+        val dist = (corner - target).getDistance()
+        if (dist < minDist && dist < threshold) {
+            minDist = dist
+            minIdx  = idx
+        }
+    }
+    return minIdx
+}
+
+fun Offset.clampTo(rect: Rect): Offset = Offset(
+    x = x.coerceIn(rect.left, rect.right),
+    y = y.coerceIn(rect.top,  rect.bottom)
+)

@@ -14,8 +14,8 @@ import org.koin.android.annotation.KoinViewModel
 
 @KoinViewModel
 class CropViewModel(
-    originFilePath: String,
-    originQuad: FloatArray?,
+    private val originFilePath: String,
+    private val originQuad: FloatArray?,
     private val scanRepository: ScanRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(CropState())
@@ -34,14 +34,13 @@ class CropViewModel(
         _state.update {
             it.copy(
                 originBitmap = BitmapFactory.decodeFile(path),
-
             )
         }
     }
 
     fun handleIntent(intent: CropIntent) {
-        when (intent) {
-            is CropIntent.OnChangeQuad -> _state.update { it.copy(currentQuad = intent.quad) }
-        }
+//        when (intent) {
+//            is CropIntent.OnChangeQuad -> _state.update { it.copy(currentQuad = intent.quad) }
+//        }
     }
 }

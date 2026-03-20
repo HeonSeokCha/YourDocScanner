@@ -22,6 +22,8 @@ import androidx.compose.ui.geometry.lerp
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.PathOperation
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Fill
@@ -37,172 +39,80 @@ import kotlin.math.roundToInt
 
 @Composable
 fun CropOverlay(
-    modifier: Modifier = Modifier,
-//    quad: DisplayQuad,
-//    onQuadChange: (DisplayQuad) -> Unit
+    corners: List<Offset>,
+    draggingIndex: Int,
+    modifier: Modifier = Modifier
 ) {
-    val density = LocalDensity.current
-    val handleRadius = with(density) { 18.dp.toPx() }
-    val touchRadius = with(density) { 40.dp.toPx() }
+    Canvas(modifier = modifier) {
+        if (corners.size < 4) return@Canvas
 
-    val quad by remember { mutableStateOf(DisplayQuad()) }
+        val (tl, tr, br, bl) = corners
 
-    var draggingIndex by remember { mutableIntStateOf(-1) }
-    var offsettlX by remember { mutableFloatStateOf(0f) }
-    var offsettlY by remember { mutableFloatStateOf(0f) }
-    var offsettrX by remember { mutableFloatStateOf(1000f) }
-    var offsettrY by remember { mutableFloatStateOf(0f) }
-    var offsetblX by remember { mutableFloatStateOf(0f) }
-    var offsetblY by remember { mutableFloatStateOf(1000f) }
-    var offsetbrX by remember { mutableFloatStateOf(1000f) }
-    var offsetbrY by remember { mutableFloatStateOf(1000f) }
+        val fullPath = Path().apply {
+            addRect(Rect(0f, 0f, size.width, size.height))
+        }
+        val quadPath = Path().apply {
+            moveTo(tl.x, tl.y)
+            lineTo(tr.x, tr.y)
+            lineTo(br.x, br.y)
+            lineTo(bl.x, bl.y)
+            close()
+        }
+        val dimPath = Path().apply {
+            op(fullPath, quadPath, PathOperation.Difference)
+        }
+        drawPath(dimPath, Color(0x88000000))
 
-
-    Box(
-        modifier = Modifier
-            .offset { IntOffset(offsettlX.roundToInt(), offsettlY.roundToInt()) }
-            .background(Color.Blue, CircleShape)
-            .size(24.dp)
-            .pointerInput(Unit) {
-                detectDragGestures { change, dragAmount ->
-                    change.consume()
-                    offsettlX += dragAmount.x
-                    offsettlY += dragAmount.y
-                }
-            }
-    )
-
-        Box(
-            modifier = Modifier
-                .offset { IntOffset(offsettrX.roundToInt(), offsettrY.roundToInt()) }
-                .background(Color.Blue, CircleShape)
-                .size(24.dp)
-                .pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        offsettrX += dragAmount.x
-                        offsettrY += dragAmount.y
-                    }
-                }
+        drawPath(
+            quadPath, Color.White, style = Stroke(
+                width = 2f,
+                pathEffect = PathEffect.dashPathEffect(floatArrayOf(12f, 6f))
+            )
         )
 
+        val guideLen = 28f
+        val guideW = 4f
 
+        data class GuideDir(val dx1: Float, val dy1: Float, val dx2: Float, val dy2: Float)
 
-        Box(
-            modifier = Modifier
-                .offset { IntOffset(offsetblX.roundToInt(), offsetblY.roundToInt()) }
-                .background(Color.Blue, CircleShape)
-                .size(24.dp)
-                .pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        offsetblX += dragAmount.x
-                        offsetblY += dragAmount.y
-                    }
-                }
+        val guides = mapOf(
+            tl to GuideDir(guideLen, 0f, 0f, guideLen),
+            tr to GuideDir(-guideLen, 0f, 0f, guideLen),
+            br to GuideDir(-guideLen, 0f, 0f, -guideLen),
+            bl to GuideDir(guideLen, 0f, 0f, -guideLen)
         )
+        guides.forEach { (corner, dir) ->
+            drawLine(Color.White, corner, Offset(corner.x + dir.dx1, corner.y + dir.dy1), guideW)
+            drawLine(Color.White, corner, Offset(corner.x + dir.dx2, corner.y + dir.dy2), guideW)
+        }
 
-        Box(
-            modifier = Modifier
-                .offset { IntOffset(offsetbrX.roundToInt(), offsetbrY.roundToInt()) }
-                .background(Color.Blue, CircleShape)
-                .size(24.dp)
-                .pointerInput(Unit) {
-                    detectDragGestures { change, dragAmount ->
-                        change.consume()
-                        offsetbrX += dragAmount.x
-                        offsetbrY += dragAmount.y
-                    }
-                }
-        )
+        val gridColor = Color(0x55FFFFFF)
+        for (i in 1..2) {
+            val t = i / 3f
+            // 가로
+            val leftPt = lerp(tl, bl, t)
+            val rightPt = lerp(tr, br, t)
+            drawLine(gridColor, leftPt, rightPt, 1f)
+            // 세로
+            val topPt = lerp(tl, tr, t)
+            val bottomPt = lerp(bl, br, t)
+            drawLine(gridColor, topPt, bottomPt, 1f)
+        }
 
-
-//    Canvas(modifier = dragModifier) {
-//        val (tl, tr, br, bl) = listOf(quad.tl, quad.tr, quad.br, quad.bl)
-//
-//        val maskPath = Path().apply {
-//            addRect(Rect(0f, 0f, size.width, size.height))
-//            moveTo(tl.x, tl.y)
-//            lineTo(tr.x, tr.y)
-//            lineTo(br.x, br.y)
-//            lineTo(bl.x, bl.y)
-//            close()
-//        }
-//        drawPath(
-//            path = maskPath,
-//            color = Color.Black.copy(alpha = 0.55f),
-//            style = Fill,
-//            blendMode = BlendMode.SrcOver
-//        )
-//
-//        val borderPath = Path().apply {
-//            moveTo(tl.x, tl.y)
-//            lineTo(tr.x, tr.y)
-//            lineTo(br.x, br.y)
-//            lineTo(bl.x, bl.y)
-//            close()
-//        }
-//        drawPath(
-//            path = borderPath,
-//            color = Color.White,
-//            style = Stroke(width = 2.dp.toPx())
-//        )
-//
-//        drawGridLines(tl, tr, br, bl)
-//
-//        quad.toList().forEachIndexed { index, corner ->
-//            val isDragging = index == draggingIndex
-//            val handleColor = if (isDragging) Color(0xFFFFD600) else Color.White
-//            val scale = if (isDragging) 1.3f else 1.0f
-//
-//            drawCircle(
-//                color = Color.Black.copy(alpha = 0.3f),
-//                radius = handleRadius * scale + 4f,
-//                center = corner
-//            )
-//
-//            drawCircle(
-//                color = handleColor,
-//                radius = handleRadius * scale,
-//                center = corner
-//            )
-//            drawCornerMark(corner = corner, index = index, size = handleRadius * scale * 0.7f)
-//        }
-//    }
-}
-
-private fun DrawScope.drawCornerMark(corner: Offset, index: Int, size: Float) {
-    val color = Color(0xFFFFD600)
-    val stroke = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
-
-    val (hDir, vDir) = when (index) {
-        0 -> Offset(1f, 0f) to Offset(0f, 1f)   // TL: →, ↓
-        1 -> Offset(-1f, 0f) to Offset(0f, 1f)   // TR: ←, ↓
-        2 -> Offset(-1f, 0f) to Offset(0f, -1f)  // BR: ←, ↑
-        else -> Offset(1f, 0f) to Offset(0f, -1f)  // BL: →, ↑
+        corners.forEachIndexed { index, corner ->
+            val isDragging = index == draggingIndex
+            drawCircle(
+                color = if (isDragging) Color.White else Color(0xCCFFFFFF),
+                radius = if (isDragging) 22f else 16f,
+                center = corner,
+                style = Fill
+            )
+            drawCircle(
+                color = if (isDragging) Color(0xFF2196F3) else Color(0xFF1565C0),
+                radius = if (isDragging) 12f else 8f,
+                center = corner,
+                style = Fill
+            )
+        }
     }
-    drawLine(color, corner, corner + hDir * size, strokeWidth = stroke.width)
-    drawLine(color, corner, corner + vDir * size, strokeWidth = stroke.width)
-}
-
-private fun DrawScope.drawGridLines(
-    tl: Offset,
-    tr: Offset,
-    br: Offset,
-    bl: Offset
-) {
-    val gridColor = Color.White.copy(alpha = 0.35f)
-    val stroke = Stroke(width = 1.dp.toPx())
-
-    for (t in listOf(1f / 3f, 2f / 3f)) {
-        val left = lerp(tl, bl, t)
-        val right = lerp(tr, br, t)
-        drawLine(gridColor, left, right, strokeWidth = stroke.width)
-    }
-    for (t in listOf(1f / 3f, 2f / 3f)) {
-        val top = lerp(tl, tr, t)
-        val bottom = lerp(bl, br, t)
-        drawLine(gridColor, top, bottom, strokeWidth = stroke.width)
-    }
-
 }
