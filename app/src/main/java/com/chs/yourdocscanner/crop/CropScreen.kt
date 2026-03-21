@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,11 +16,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -49,6 +52,12 @@ fun CropScreenRoot(
     viewModel: CropViewModel
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val density = LocalDensity.current
+
+    LaunchedEffect(density) {
+        viewModel.touchRadiusPx = with(density) { 36.dp.toPx() }
+    }
+
     CropScreen(
         state = state,
         onIntent = viewModel::handleIntent
@@ -60,79 +69,62 @@ fun CropScreen(
     state: CropState,
     onIntent: (CropIntent) -> Unit
 ) {
-    var canvasSize by remember { mutableStateOf(IntSize.Zero) }
-
-    val imageRect by remember(canvasSize, state.originBitmap) {
-        derivedStateOf {
-            computeFitRect(
-                canvasW = canvasSize.width.toFloat(),
-                canvasH = canvasSize.height.toFloat(),
-                imageW = (state.originBitmap?.width ?: 0).toFloat(),
-                imageH = (state.originBitmap?.height ?: 0).toFloat()
-            )
-        }
-    }
-
-    var corners by remember(imageRect, state.currentQuad) {
-        mutableStateOf(
-            state.currentQuad?.toCanvasCorners(imageRect, state.originBitmap)
-                ?: imageRect.defaultCorners()
-        )
-    }
-
-    var draggingIndex by remember { mutableIntStateOf(-1) }
-
-    val touchRadiusPx = with(LocalDensity.current) { 36.dp.toPx() }
-
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(Color.Black)
-            .onSizeChanged { canvasSize = it }
-            .pointerInput(imageRect) {
-                detectDragGestures(
-                    onDragStart = { offset ->
-                        draggingIndex = corners.indexOfMinDistanceTo(offset, touchRadiusPx)
-                    },
-                    onDrag = { change, _ ->
-                        if (draggingIndex >= 0) {
-                            val clamped = change.position.clampTo(imageRect)
-                            corners = corners.toMutableList()
-                                .also { it[draggingIndex] = clamped }
-                        }
-                    },
-                    onDragEnd = { draggingIndex = -1 },
-                    onDragCancel = { draggingIndex = -1 }
-                )
-            }
+    Column(
+        modifier = Modifier.fillMaxSize()
     ) {
-        if (state.originBitmap == null) return@Box
-
-        Image(
-            state.originBitmap.asImageBitmap(),
-            contentDescription = null,
-            contentScale = ContentScale.Fit,
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-        )
+                .weight(1f)
+                .fillMaxWidth()
+                .background(Color.Black)
+                .onSizeChanged { onIntent(CropIntent.UpdateCanvasSize(it)) }
+                .pointerInput(state.imageRect) {
+                    detectDragGestures(
+                        onDragStart = { offset ->
+                            onIntent(CropIntent.DragStart(offset))
+                        },
+                        onDrag = { change, _ ->
+                            onIntent(CropIntent.DragMove(change.position))
+                        },
+                        onDragEnd = { onIntent(CropIntent.DragEnd) },
+                        onDragCancel = { onIntent(CropIntent.DragEnd) }
+                    )
+                }
+        ) {
+            if (state.bitmap == null) return@Box
 
-        if (canvasSize != IntSize.Zero) {
-            CropOverlay(
-                corners = corners,
-                draggingIndex = draggingIndex,
+            Image(
+                state.bitmap.asImageBitmap(),
+                contentDescription = null,
+                contentScale = ContentScale.Fit,
                 modifier = Modifier
                     .fillMaxSize()
             )
-        }
 
+            if (state.isReady) {
+                CropOverlay(
+                    corners = state.corners,
+                    draggingIndex = state.draggingIdx,
+                    modifier = Modifier
+                        .fillMaxSize()
+                )
+            }
+
+            if (state.isSaving) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(Color(0x88000000)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(color = Color.White)
+                }
+            }
+        }
         CropBottomBar(
-            modifier = Modifier
-                .align(Alignment.BottomCenter),
-            onReset = {
-                corners = imageRect.defaultCorners()
-            },
-            onCancel = { },
-            onConfirm = { }
+            onReset = { onIntent(CropIntent.ClickReset) },
+            onCancel = { onIntent(CropIntent.ClickCancel) },
+            onConfirm = {  onIntent(CropIntent.ClickConfirm) }
         )
     }
 }

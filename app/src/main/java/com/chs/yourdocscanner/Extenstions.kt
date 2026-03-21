@@ -102,3 +102,15 @@ fun Offset.clampTo(rect: Rect): Offset = Offset(
     x = x.coerceIn(rect.left, rect.right),
     y = y.coerceIn(rect.top,  rect.bottom)
 )
+
+fun FloatArray.toDetectQuad(): DetectedQuad {
+    return DetectedQuad(
+        topLeft = Offset(this[0], this[1]),
+        topRight = Offset(this[2], this[3]),
+        bottomLeft = Offset(this[4], this[5]),
+        bottomRight = Offset(this[6], this[7]),
+        imageWidth = 0,
+        imageHeight = 0,
+        rotationDegrees = 0
+    )
+}
