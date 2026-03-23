@@ -59,7 +59,13 @@ fun MainNavDisplay(
                         key.detectQuad
                     )
                 }
-                CropScreenRoot(viewModel)
+                CropScreenRoot(
+                    viewModel = viewModel,
+                    onNavigateResult = { crop, quad ->
+                        backStack.removeLastOrNull()
+                        backStack.add(YourDocScannerScreens.ScanResultScreen(key.filePath, crop, quad))
+                    }
+                )
             }
 
             entry<YourDocScannerScreens.ScanResultScreen> { key ->

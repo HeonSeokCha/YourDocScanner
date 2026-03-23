@@ -114,3 +114,16 @@ fun FloatArray.toDetectQuad(): DetectedQuad {
         rotationDegrees = 0
     )
 }
+
+fun List<Offset>.toFloatArray(): FloatArray {
+    return floatArrayOf(
+        this[0].x,
+        this[0].y,
+        this[1].x,
+        this[1].y,
+        this[2].x,
+        this[2].y,
+        this[3].x,
+        this[3].y
+    )
+}

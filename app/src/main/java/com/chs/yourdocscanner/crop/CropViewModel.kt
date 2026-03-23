@@ -9,12 +9,17 @@ import com.chs.yourdocscanner.OpenCVBridge
 import com.chs.yourdocscanner.ScanRepository
 import com.chs.yourdocscanner.scan.DetectedQuad
 import com.chs.yourdocscanner.toDetectQuad
+import com.chs.yourdocscanner.toFloatArray
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.koin.android.annotation.KoinViewModel
+import java.io.File
 
 @KoinViewModel
 class CropViewModel(
@@ -35,6 +40,9 @@ class CropViewModel(
             _state.value
         )
 
+    private val _effect: Channel<CropEffect> = Channel(Channel.BUFFERED)
+    val effect = _effect.receiveAsFlow()
+
     var touchRadiusPx: Float = 72f
 
     private fun init(path: String) {
@@ -53,7 +61,7 @@ class CropViewModel(
                 reduce { cropUtil.updateCanvasSize(it, intent.size) }
             }
             CropIntent.ClickCancel -> {}
-            CropIntent.ClickConfirm -> {}
+            CropIntent.ClickConfirm -> cropBitmap()
             CropIntent.ClickReset -> reduce { cropUtil.reset(it) }
             is CropIntent.DragStart -> reduce { cropUtil.dragStart(it, intent.offset, touchRadiusPx) }
             is CropIntent.DragMove -> reduce { cropUtil.dragMove(it, intent.offset) }
@@ -61,9 +69,26 @@ class CropViewModel(
         }
     }
 
-//    fun cropBitmap() {
-//        OpenCVBridge.warpDocument()
-//    }
+    fun cropBitmap() {
+        viewModelScope.launch {
+            if (_state.value.bitmap == null) return@launch
+            val cornerFloatArray = _state.value.corners.toFloatArray()
+            val cropBitmap = OpenCVBridge.warpDocument(
+                _state.value.bitmap!!,
+                cornerFloatArray
+            )
+            if (cropBitmap == null) {
+                _state.value.bitmap!!.recycle()
+                return@launch
+            }
+
+            val file: File? = scanRepository.saveImage(cropBitmap)
+            cropBitmap.recycle()
+            if (file == null) return@launch
+
+            _effect.trySend(CropEffect.SaveSuccess(file.absolutePath, cornerFloatArray))
+        }
+    }
 
     private fun reduce(reducer: (CropState) -> CropState) {
         _state.update(reducer)

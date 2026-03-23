@@ -49,13 +49,24 @@ import com.chs.yourdocscanner.toCanvasCorners
 
 @Composable
 fun CropScreenRoot(
-    viewModel: CropViewModel
+    viewModel: CropViewModel,
+    onNavigateResult: (String, FloatArray) -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val density = LocalDensity.current
 
     LaunchedEffect(density) {
         viewModel.touchRadiusPx = with(density) { 36.dp.toPx() }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                CropEffect.NavigateBack -> {}
+                CropEffect.SaveError -> {}
+                is CropEffect.SaveSuccess -> onNavigateResult(effect.filePath, effect.quad)
+            }
+        }
     }
 
     CropScreen(

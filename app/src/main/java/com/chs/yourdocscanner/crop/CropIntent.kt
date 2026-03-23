@@ -1,9 +1,7 @@
 package com.chs.yourdocscanner.crop
 
-import android.graphics.Bitmap
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.unit.IntSize
-import com.chs.yourdocscanner.scan.DetectedQuad
 
 sealed interface CropIntent {
     data class UpdateCanvasSize(val size: IntSize) : CropIntent
