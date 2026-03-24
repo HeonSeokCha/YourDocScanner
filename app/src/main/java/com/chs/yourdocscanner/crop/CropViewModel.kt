@@ -10,6 +10,7 @@ import com.chs.yourdocscanner.ScanRepository
 import com.chs.yourdocscanner.scan.DetectedQuad
 import com.chs.yourdocscanner.toDetectQuad
 import com.chs.yourdocscanner.toFloatArray
+import com.chs.yourdocscanner.toImagePoints
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -60,10 +61,18 @@ class CropViewModel(
             is CropIntent.UpdateCanvasSize -> {
                 reduce { cropUtil.updateCanvasSize(it, intent.size) }
             }
+
             CropIntent.ClickCancel -> {}
             CropIntent.ClickConfirm -> cropBitmap()
             CropIntent.ClickReset -> reduce { cropUtil.reset(it) }
-            is CropIntent.DragStart -> reduce { cropUtil.dragStart(it, intent.offset, touchRadiusPx) }
+            is CropIntent.DragStart -> reduce {
+                cropUtil.dragStart(
+                    it,
+                    intent.offset,
+                    touchRadiusPx
+                )
+            }
+
             is CropIntent.DragMove -> reduce { cropUtil.dragMove(it, intent.offset) }
             CropIntent.DragEnd -> reduce { cropUtil.dragEnd(it) }
         }
@@ -72,10 +81,12 @@ class CropViewModel(
     fun cropBitmap() {
         viewModelScope.launch {
             if (_state.value.bitmap == null) return@launch
-            val cornerFloatArray = _state.value.corners.toFloatArray()
+            val cornerFloatArray = cropUtil.extractImagePoints(_state.value) ?: return@launch
+
             val cropBitmap = OpenCVBridge.warpDocument(
                 _state.value.bitmap!!,
-                cornerFloatArray
+                cornerFloatArray,
+                false
             )
             if (cropBitmap == null) {
                 _state.value.bitmap!!.recycle()

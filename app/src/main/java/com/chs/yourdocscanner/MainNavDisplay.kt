@@ -76,6 +76,7 @@ fun MainNavDisplay(
                         key.detectQuad
                     )
                 }
+
                 ScanResultScreenRoot(
                     viewModel = viewModel,
                     onNavigateCrop = { filePath, detectQuad ->

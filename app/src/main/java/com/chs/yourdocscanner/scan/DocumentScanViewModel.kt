@@ -32,13 +32,9 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withContext
 import org.koin.android.annotation.KoinViewModel
 import java.io.File
 import java.io.IOException
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.concurrent.Executors
 
 @KoinViewModel
@@ -135,7 +131,7 @@ class DocumentScannerViewModel(
                 quad.bottomLeft.x * scaleX, quad.bottomLeft.y * scaleY,
             )
 
-            val warpedBitmap = OpenCVBridge.warpDocument(rawBitmap, points)
+            val warpedBitmap = OpenCVBridge.warpDocument(rawBitmap, points, true)
 
             if (warpedBitmap == null) {
                 val file = saveBitmap(rawBitmap.applyRotation(rotationDegrees))

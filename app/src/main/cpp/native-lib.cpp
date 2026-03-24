@@ -158,13 +158,15 @@ Java_com_chs_yourdocscanner_OpenCVBridge_warpDocument(
         JNIEnv *env,
         jobject,
         jobject bitmapIn,
-        jfloatArray points
+        jfloatArray points,
+        bool isFlip
 ) {
     AndroidBitmapInfo info;
     AndroidBitmap_getInfo(env, bitmapIn, &info);
 
     void *pixels;
     AndroidBitmap_lockPixels(env, bitmapIn, &pixels);
+
     Mat src(info.height, info.width, CV_8UC4, pixels);
     Mat srcBgr;
     cvtColor(src, srcBgr, COLOR_RGBA2BGR);
@@ -200,7 +202,9 @@ Java_com_chs_yourdocscanner_OpenCVBridge_warpDocument(
     warpPerspective(srcBgr, warped, M, Size(dstW, dstH),
             INTER_LINEAR, BORDER_CONSTANT, Scalar(255, 255, 255));
 
-  flip(warped, warped, 1);
+    if (isFlip) {
+        flip(warped, warped, 1);
+    }
 
     Mat enhanced;
     Mat lab;

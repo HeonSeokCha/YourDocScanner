@@ -14,5 +14,9 @@ object OpenCVBridge {
         height: Int
     ): List<Point>?
 
-    external fun warpDocument(bitmap: Bitmap, points: FloatArray): Bitmap?
+        external fun warpDocument(
+            bitmap: Bitmap,
+            points: FloatArray,
+            isFlip: Boolean
+        ): Bitmap?
 }
