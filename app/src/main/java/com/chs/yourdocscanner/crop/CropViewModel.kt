@@ -62,7 +62,7 @@ class CropViewModel(
                 reduce { cropUtil.updateCanvasSize(it, intent.size) }
             }
 
-            CropIntent.ClickCancel -> {}
+            CropIntent.ClickCancel -> _effect.trySend(CropEffect.NavigateBack)
             CropIntent.ClickConfirm -> cropBitmap()
             CropIntent.ClickReset -> reduce { cropUtil.reset(it) }
             is CropIntent.DragStart -> reduce {

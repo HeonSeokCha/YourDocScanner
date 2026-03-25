@@ -17,6 +17,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -37,6 +38,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -46,11 +48,13 @@ import com.chs.yourdocscanner.computeFitRect
 import com.chs.yourdocscanner.defaultCorners
 import com.chs.yourdocscanner.indexOfMinDistanceTo
 import com.chs.yourdocscanner.toCanvasCorners
+import com.chs.yourdocscanner.ui.theme.YourDocScannerTheme
 
 @Composable
 fun CropScreenRoot(
     viewModel: CropViewModel,
-    onNavigateResult: (String, FloatArray) -> Unit
+    onNavigateResult: (String, FloatArray) -> Unit,
+    onBack: () -> Unit
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val density = LocalDensity.current
@@ -62,7 +66,7 @@ fun CropScreenRoot(
     LaunchedEffect(Unit) {
         viewModel.effect.collect { effect ->
             when (effect) {
-                CropEffect.NavigateBack -> {}
+                CropEffect.NavigateBack -> onBack()
                 CropEffect.SaveError -> {}
                 is CropEffect.SaveSuccess -> onNavigateResult(effect.filePath, effect.quad)
             }
@@ -81,12 +85,15 @@ fun CropScreen(
     onIntent: (CropIntent) -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
     ) {
         Box(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth()
+                .padding(horizontal = 20.dp)
                 .background(Color.Black)
                 .onSizeChanged { onIntent(CropIntent.UpdateCanvasSize(it)) }
                 .pointerInput(state.imageRect) {
@@ -131,11 +138,26 @@ fun CropScreen(
                     CircularProgressIndicator(color = Color.White)
                 }
             }
+
+
+            FloatingActionButton(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(bottom = 8.dp),
+                containerColor = Color(0xFF2196F3),
+                onClick = { onIntent(CropIntent.ClickReset)}
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Refresh,
+                    contentDescription = null,
+                    tint = Color.White
+                )
+            }
         }
+
         CropBottomBar(
-            onReset = { onIntent(CropIntent.ClickReset) },
-            onCancel = { onIntent(CropIntent.ClickCancel) },
-            onConfirm = {  onIntent(CropIntent.ClickConfirm) }
+            onConfirm = {  onIntent(CropIntent.ClickConfirm) },
+            onCancel = { onIntent(CropIntent.ClickCancel) }
         )
     }
 }
@@ -143,9 +165,8 @@ fun CropScreen(
 
 @Composable
 private fun CropBottomBar(
-    onReset: () -> Unit,
-    onCancel: () -> Unit,
     onConfirm: () -> Unit,
+    onCancel: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -153,23 +174,21 @@ private fun CropBottomBar(
             .fillMaxWidth()
             .background(Color(0xFF1A1A1A))
             .navigationBarsPadding()
-            .padding(horizontal = 24.dp, vertical = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        TextButton(onClick = onCancel) {
+        Button(
+            modifier = Modifier
+                .weight(0.5f),
+            onClick = onCancel
+        ) {
             Text("취소", color = Color.White, fontSize = 16.sp)
         }
 
-        IconButton(onClick = onReset) {
-            Icon(
-                imageVector = Icons.Default.Refresh,
-                contentDescription = "초기화",
-                tint = Color.White
-            )
-        }
-
         Button(
+            modifier = Modifier
+                .weight(0.5f),
             onClick = onConfirm,
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF2196F3)

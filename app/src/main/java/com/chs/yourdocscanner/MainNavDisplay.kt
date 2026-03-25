@@ -64,7 +64,8 @@ fun MainNavDisplay(
                     onNavigateResult = { crop, quad ->
                         backStack.removeLastOrNull()
                         backStack.add(YourDocScannerScreens.ScanResultScreen(key.filePath, crop, quad))
-                    }
+                    },
+                    onBack = { backStack.removeLastOrNull() }
                 )
             }
 
