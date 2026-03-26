@@ -40,7 +40,8 @@ class ScanResultViewModel(
             ScanResultIntent.ClickDelete -> {
                 _effect.trySend(ScanResultEffect.NavigateScan)
             }
-            ScanResultIntent.ClickNext -> TODO()
+
+            ScanResultIntent.ClickFab -> TODO()
         }
     }
 }

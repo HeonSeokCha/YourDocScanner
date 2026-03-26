@@ -7,19 +7,27 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CropFree
+import androidx.compose.material.icons.filled.FitScreen
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Rotate90DegreesCw
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -138,63 +146,103 @@ fun CropScreen(
                     CircularProgressIndicator(color = Color.White)
                 }
             }
-
-
-            FloatingActionButton(
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(bottom = 8.dp),
-                containerColor = Color(0xFF2196F3),
-                onClick = { onIntent(CropIntent.ClickReset)}
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = null,
-                    tint = Color.White
-                )
-            }
         }
 
-        CropBottomBar(
-            onConfirm = {  onIntent(CropIntent.ClickConfirm) },
-            onCancel = { onIntent(CropIntent.ClickCancel) }
-        )
+        CropBottomBar(onIntent = onIntent)
     }
 }
 
 
 @Composable
 private fun CropBottomBar(
-    onConfirm: () -> Unit,
-    onCancel: () -> Unit,
+    onIntent: (CropIntent) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Row(
-        modifier = modifier
+    val options = listOf(
+        "자동 자르기" to Icons.Default.FitScreen,
+        "자르기 없음" to Icons.Default.CropFree,
+        "회전" to Icons.Default.Rotate90DegreesCw
+    )
+
+    Column(
+        modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF1A1A1A))
-            .navigationBarsPadding()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
+            .padding(
+                start = 8.dp,
+                end = 8.dp,
+                bottom = 16.dp
+            ),
     ) {
-        Button(
+        SingleChoiceSegmentedButtonRow(
             modifier = Modifier
-                .weight(0.5f),
-            onClick = onCancel
+                .fillMaxWidth(),
+            space = 4.dp
         ) {
-            Text("취소", color = Color.White, fontSize = 16.sp)
+            options.forEachIndexed { idx, info ->
+                SegmentedButton(
+                    shape = SegmentedButtonDefaults.itemShape(
+                        index = idx,
+                        count = options.size
+                    ),
+                    colors = SegmentedButtonDefaults.colors(
+                        activeContainerColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        activeContentColor = Color.White,
+                        inactiveContainerColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                        inactiveContentColor = Color.White,
+                    ),
+                    onClick = {
+                        when (idx) {
+                            0 -> onIntent(CropIntent.ClickAutoCrop)
+                            1 -> onIntent(CropIntent.ClickReset)
+                            2 -> onIntent(CropIntent.ClickRotate)
+                        }
+                    },
+                    selected = false,
+                    label = { Text(info.first) },
+                    icon = {
+                        Icon(info.second, contentDescription = null)
+                    }
+                )
+            }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Button(
             modifier = Modifier
-                .weight(0.5f),
-            onClick = onConfirm,
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF2196F3)
-            )
+                .fillMaxWidth(),
+            onClick = { onIntent(CropIntent.ClickConfirm) }
         ) {
-            Text("적용", color = Color.White, fontSize = 16.sp)
+            Text(text = "적용")
         }
+
     }
+//    Row(
+//        modifier = modifier
+//            .fillMaxWidth()
+//            .background(Color(0xFF1A1A1A))
+//            .navigationBarsPadding()
+//            .padding(16.dp),
+//        horizontalArrangement = Arrangement.spacedBy(8.dp),
+//        verticalAlignment = Alignment.CenterVertically
+//    ) {
+//        Button(
+//            modifier = Modifier
+//                .weight(0.5f),
+//            onClick = onCancel
+//        ) {
+//            Text("취소", color = Color.White, fontSize = 16.sp)
+//        }
+//
+//        Button(
+//            modifier = Modifier
+//                .weight(0.5f),
+//            onClick = onConfirm,
+//            colors = ButtonDefaults.buttonColors(
+//                containerColor = Color(0xFF2196F3)
+//            )
+//        ) {
+//            Text("적용", color = Color.White, fontSize = 16.sp)
+//        }
+//    }
 }

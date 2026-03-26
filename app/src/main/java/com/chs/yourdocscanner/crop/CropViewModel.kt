@@ -75,12 +75,15 @@ class CropViewModel(
 
             is CropIntent.DragMove -> reduce { cropUtil.dragMove(it, intent.offset) }
             CropIntent.DragEnd -> reduce { cropUtil.dragEnd(it) }
+            CropIntent.ClickAutoCrop -> { }
+            CropIntent.ClickRotate -> { }
         }
     }
 
     fun cropBitmap() {
         viewModelScope.launch {
             if (_state.value.bitmap == null) return@launch
+            reduce { it.copy(isSaving = true) }
             val cornerFloatArray = cropUtil.extractImagePoints(_state.value) ?: return@launch
 
             val cropBitmap = OpenCVBridge.warpDocument(
@@ -97,6 +100,7 @@ class CropViewModel(
             cropBitmap.recycle()
             if (file == null) return@launch
 
+            reduce { it.copy(isSaving = false) }
             _effect.trySend(CropEffect.SaveSuccess(file.absolutePath, cornerFloatArray))
         }
     }

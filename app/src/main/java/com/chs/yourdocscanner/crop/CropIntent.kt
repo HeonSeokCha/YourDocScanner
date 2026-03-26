@@ -11,6 +11,8 @@ sealed interface CropIntent {
     object DragEnd : CropIntent
 
     object ClickReset : CropIntent
+    object ClickAutoCrop : CropIntent
+    object ClickRotate : CropIntent
     object ClickConfirm : CropIntent
     object ClickCancel : CropIntent
 }
