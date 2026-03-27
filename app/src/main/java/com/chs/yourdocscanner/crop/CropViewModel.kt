@@ -2,11 +2,13 @@ package com.chs.yourdocscanner.crop
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chs.yourdocscanner.OpenCVBridge
 import com.chs.yourdocscanner.ScanRepository
+import com.chs.yourdocscanner.applyRotation
 import com.chs.yourdocscanner.scan.DetectedQuad
 import com.chs.yourdocscanner.toDetectQuad
 import com.chs.yourdocscanner.toFloatArray
@@ -14,6 +16,7 @@ import com.chs.yourdocscanner.toImagePoints
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
@@ -75,12 +78,12 @@ class CropViewModel(
 
             is CropIntent.DragMove -> reduce { cropUtil.dragMove(it, intent.offset) }
             CropIntent.DragEnd -> reduce { cropUtil.dragEnd(it) }
-            CropIntent.ClickAutoCrop -> { }
-            CropIntent.ClickRotate -> { }
+            CropIntent.ClickAutoCrop -> autoDetectOverlay()
+            CropIntent.ClickRotate -> rotateBitmap()
         }
     }
 
-    fun cropBitmap() {
+    private fun cropBitmap() {
         viewModelScope.launch {
             if (_state.value.bitmap == null) return@launch
             reduce { it.copy(isSaving = true) }
@@ -102,6 +105,24 @@ class CropViewModel(
 
             reduce { it.copy(isSaving = false) }
             _effect.trySend(CropEffect.SaveSuccess(file.absolutePath, cornerFloatArray))
+        }
+    }
+
+
+    private fun rotateBitmap() {
+        reduce {
+            Log.e("CHS_123", ((it.rotateDegree + 90) % 360).toString())
+            it.copy(
+                bitmap = it.bitmap?.applyRotation(90),
+                rotateDegree = (it.rotateDegree + 90) % 360
+            )
+        }
+    }
+
+    private fun autoDetectOverlay() {
+        if (_state.value.bitmap == null) return
+        viewModelScope.launch {
+            val points = OpenCVBridge.detectRectanglesFromBitmap(bitmap = _state.value.bitmap!!)
         }
     }
 

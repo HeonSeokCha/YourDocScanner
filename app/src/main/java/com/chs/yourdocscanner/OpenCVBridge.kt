@@ -14,9 +14,11 @@ object OpenCVBridge {
         height: Int
     ): List<Point>?
 
-        external fun warpDocument(
-            bitmap: Bitmap,
-            points: FloatArray,
-            isFlip: Boolean
-        ): Bitmap?
+    external fun detectRectanglesFromBitmap(bitmap: Bitmap): List<Point>?
+
+    external fun warpDocument(
+        bitmap: Bitmap,
+        points: FloatArray,
+        isFlip: Boolean
+    ): Bitmap?
 }

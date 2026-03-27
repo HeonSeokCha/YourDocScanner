@@ -154,12 +154,95 @@ Java_com_chs_yourdocscanner_OpenCVBridge_detectRectangles(
 }
 
 extern "C" JNIEXPORT jobject JNICALL
+Java_com_chs_yourdocscanner_OpenCVBridge_detectRectanglesFromBitmap(
+        JNIEnv *env,
+        jobject thiz,
+        jobject bitmapIn
+) {
+    AndroidBitmapInfo info;
+    AndroidBitmap_getInfo(env, bitmapIn, &info);
+
+    void *pixels;
+    AndroidBitmap_lockPixels(env, bitmapIn, &pixels);
+
+    Mat src(info.height, info.width, CV_8UC4, pixels);
+
+    Mat gray;
+    cvtColor(src, gray, COLOR_RGBA2GRAY);
+
+    Ptr<CLAHE> clahe = createCLAHE(2.0, Size(8, 8));
+    clahe->apply(gray, gray);
+
+    Mat filtered;
+    bilateralFilter(gray, filtered, 9, 75.0, 75.0);
+//    GaussianBlur(gray, gray, Size(5, 5), 0.0);
+
+    Mat edges;
+    autoCanny(filtered, edges, 0.33);
+
+    Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
+    dilate(edges, edges, kernel);
+//    Canny(gray, edges, 75.0, 200.0);
+
+    vector<vector<Point>> contours;
+    vector<Vec4i> hierarchy;
+    findContours(edges, contours, hierarchy, RETR_LIST, CHAIN_APPROX_SIMPLE);
+
+    sort(contours.begin(), contours.end(), [](const auto &a, const auto &b) {
+        return contourArea(a) > contourArea(b);
+    });
+
+    vector<Point2f> docContour;
+    bool found = false;
+
+    for (auto &contour: contours) {
+        Mat contourF;
+        Mat(contour).convertTo(contourF, CV_32F);
+
+        double peri = arcLength(contourF, true);
+
+        vector<Point2f> approx;
+        approxPolyDP(contourF, approx, 0.02 * peri, true);
+
+        if (validateQuad(approx, info.width, info.height)) {
+            docContour = approx;
+            found = true;
+            break;
+        }
+    }
+
+    AndroidBitmap_unlockPixels(env, bitmapIn);
+    gray.release();
+    edges.release();
+
+    if (!found) return nullptr;
+
+    jclass alClass = env->FindClass("java/util/ArrayList");
+    jmethodID alInit = env->GetMethodID(alClass, "<init>", "()V");
+    jmethodID alAdd = env->GetMethodID(alClass, "add", "(Ljava/lang/Object;)Z");
+    jobject resultList = env->NewObject(alClass, alInit);
+
+    jclass ptClass = env->FindClass("android/graphics/Point");
+    jmethodID ptInit = env->GetMethodID(ptClass, "<init>", "(II)V");
+
+    for (const auto &pt: docContour) {
+        jobject point = env->NewObject(ptClass, ptInit,
+                static_cast<jint>(pt.x),
+                static_cast<jint>(pt.y));
+        env->CallBooleanMethod(resultList, alAdd, point);
+        env->DeleteLocalRef(point);
+    }
+
+    return resultList;
+}
+
+extern "C" JNIEXPORT jobject JNICALL
 Java_com_chs_yourdocscanner_OpenCVBridge_warpDocument(
         JNIEnv *env,
         jobject,
         jobject bitmapIn,
         jfloatArray points,
-        bool isFlip
+        jboolean isFlip
 ) {
     AndroidBitmapInfo info;
     AndroidBitmap_getInfo(env, bitmapIn, &info);

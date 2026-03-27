@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.chs.yourdocscanner.applyRotation
 import com.chs.yourdocscanner.clampTo
 import com.chs.yourdocscanner.computeFitRect
 import com.chs.yourdocscanner.defaultCorners

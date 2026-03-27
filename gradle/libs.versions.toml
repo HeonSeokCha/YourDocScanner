@@ -1,11 +1,11 @@
 [versions]
 agp = "9.1.0"
-camera = "1.5.3"
+camera = "1.6.0"
 coreKtx = "1.18.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 kotlin = "2.3.20"
-composeBom = "2026.03.00"
+composeBom = "2026.03.01"
 kotlinxSerializationCore = "1.10.0"
 koin = "4.2.0"
 koin-annotation = "2.3.1"

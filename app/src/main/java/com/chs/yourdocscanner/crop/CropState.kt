@@ -12,6 +12,7 @@ data class CropState(
     val corners: List<Offset> = emptyList(),
     val draggingIdx: Int = -1,
     val isSaving: Boolean = false,
+    val rotateDegree: Int = 0
 ) {
     val isReady: Boolean
         get() = bitmap != null && corners.size == 4 && imageRect != Rect.Zero
