@@ -32,7 +32,7 @@ fun ScanResultScreenRoot(
         viewModel.effect.collect { effect ->
             when (effect) {
                 is ScanResultEffect.NavigateCrop -> {
-                    onNavigateCrop(effect.originFilePath, effect.floatArray)
+                    onNavigateCrop(effect.originFilePath, effect.cropPoints)
                 }
                 ScanResultEffect.NavigateScan -> onNavigateScan()
             }
@@ -79,16 +79,16 @@ fun ScanResultScreen(
             Button(
                 modifier = Modifier
                     .weight(1f),
-                onClick = {}
+                onClick = { onIntent(ScanResultIntent.ClickDelete) }
             ) {
                 Text(text = "스캔 삭제")
             }
             Button(
                 modifier = Modifier
                     .weight(1f),
-                onClick = {}
+                onClick = { onIntent(ScanResultIntent.ClickCrop) }
             ) {
-                Text(text = "다음")
+                Text(text = "스캔 편집")
             }
         }
     }

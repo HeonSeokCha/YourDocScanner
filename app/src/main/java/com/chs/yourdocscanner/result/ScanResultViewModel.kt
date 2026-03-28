@@ -15,6 +15,8 @@ import org.koin.android.annotation.KoinViewModel
 @KoinViewModel
 class ScanResultViewModel(
     private val cropFilePath: String,
+    private val originFilePath: String,
+    private val cropPoints: FloatArray
 ) : ViewModel() {
     private val _state = MutableStateFlow(ScanResultState())
     val state = _state
@@ -41,7 +43,14 @@ class ScanResultViewModel(
                 _effect.trySend(ScanResultEffect.NavigateScan)
             }
 
-            ScanResultIntent.ClickFab -> TODO()
+            ScanResultIntent.ClickCrop -> {
+                _effect.trySend(
+                    ScanResultEffect.NavigateCrop(
+                        originFilePath = originFilePath,
+                        cropPoints = cropPoints
+                    )
+                )
+            }
         }
     }
 }

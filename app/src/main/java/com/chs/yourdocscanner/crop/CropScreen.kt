@@ -218,32 +218,4 @@ private fun CropBottomBar(
         }
 
     }
-//    Row(
-//        modifier = modifier
-//            .fillMaxWidth()
-//            .background(Color(0xFF1A1A1A))
-//            .navigationBarsPadding()
-//            .padding(16.dp),
-//        horizontalArrangement = Arrangement.spacedBy(8.dp),
-//        verticalAlignment = Alignment.CenterVertically
-//    ) {
-//        Button(
-//            modifier = Modifier
-//                .weight(0.5f),
-//            onClick = onCancel
-//        ) {
-//            Text("취소", color = Color.White, fontSize = 16.sp)
-//        }
-//
-//        Button(
-//            modifier = Modifier
-//                .weight(0.5f),
-//            onClick = onConfirm,
-//            colors = ButtonDefaults.buttonColors(
-//                containerColor = Color(0xFF2196F3)
-//            )
-//        ) {
-//            Text("적용", color = Color.White, fontSize = 16.sp)
-//        }
-//    }
 }

@@ -131,7 +131,7 @@ class DocumentScannerViewModel(
                 quad.bottomLeft.x * scaleX, quad.bottomLeft.y * scaleY,
             )
 
-            val warpedBitmap = OpenCVBridge.warpDocument(rawBitmap, points, true)
+            val warpedBitmap = OpenCVBridge.warpDocument(rawBitmap, points, false)
 
             if (warpedBitmap == null) {
                 val file = saveBitmap(rawBitmap.applyRotation(rotationDegrees))

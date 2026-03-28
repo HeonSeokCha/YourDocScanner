@@ -18,7 +18,7 @@ class ScanRepository(
     suspend fun saveImage(bitmap: Bitmap): File? {
         return withContext(Dispatchers.IO) {
             val fileName = "DOC_${
-                SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+                SimpleDateFormat("yyyyMMdd_HHmmssSSS", Locale.getDefault()).format(Date())
             }.jpg"
 
             val docDir = File(context.filesDir, "documents")
