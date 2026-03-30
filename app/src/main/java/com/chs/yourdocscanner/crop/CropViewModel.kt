@@ -1,27 +1,23 @@
 package com.chs.yourdocscanner.crop
 
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
-import androidx.compose.ui.geometry.Offset
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.chs.yourdocscanner.OpenCVBridge
 import com.chs.yourdocscanner.ScanRepository
 import com.chs.yourdocscanner.applyRotation
-import com.chs.yourdocscanner.scan.DetectedQuad
 import com.chs.yourdocscanner.toDetectQuad
-import com.chs.yourdocscanner.toFloatArray
-import com.chs.yourdocscanner.toImagePoints
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.getAndUpdate
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.android.annotation.KoinViewModel
 import java.io.File
 
@@ -89,11 +85,14 @@ class CropViewModel(
             reduce { it.copy(isSaving = true) }
             val cornerFloatArray = cropUtil.extractImagePoints(_state.value) ?: return@launch
 
-            val cropBitmap = OpenCVBridge.warpDocument(
-                _state.value.bitmap!!,
-                cornerFloatArray,
-                false
-            )
+            val cropBitmap = withContext(Dispatchers.Default) {
+                OpenCVBridge.warpDocument(
+                    _state.value.bitmap!!,
+                    cornerFloatArray,
+                    false
+                )
+            }
+
             if (cropBitmap == null) {
                 _state.value.bitmap!!.recycle()
                 return@launch
@@ -122,7 +121,11 @@ class CropViewModel(
     private fun autoDetectOverlay() {
         if (_state.value.bitmap == null) return
         viewModelScope.launch {
-            val points = OpenCVBridge.detectRectanglesFromBitmap(bitmap = _state.value.bitmap!!)
+            val points = withContext(Dispatchers.Default) {
+                OpenCVBridge.detectRectanglesFromBitmap(bitmap = _state.value.bitmap!!)
+            } ?: return@launch
+
+            reduce { it.copy(corners = points) }
         }
     }
 

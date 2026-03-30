@@ -81,7 +81,6 @@ class CropUtil {
         return current.corners.toImagePoints(current.imageRect, bitmap)
     }
 
-
     private fun computeImageRect(size: IntSize, bitmap: Bitmap): Rect =
         computeFitRect(
             canvasW = size.width.toFloat(),

@@ -22,17 +22,6 @@ fun Bitmap.applyRotation(degrees: Int): Bitmap {
         .also { if (it != this) recycle() }
 }
 
-fun ImageProxy.toNV21ByteArray(): ByteArray {
-    val y = planes[0].buffer
-    val u = planes[1].buffer
-    val v = planes[2].buffer
-    val nv21 = ByteArray(y.remaining() + u.remaining() + v.remaining())
-    y.get(nv21, 0, y.remaining())
-    v.get(nv21, y.capacity(), v.remaining())
-    u.get(nv21, y.capacity() + v.capacity(), u.remaining())
-    return nv21
-}
-
 fun computeFitRect(
     canvasW: Float, canvasH: Float,
     imageW: Float,  imageH: Float
@@ -112,18 +101,5 @@ fun FloatArray.toDetectQuad(): DetectedQuad {
         imageWidth = 0,
         imageHeight = 0,
         rotationDegrees = 0
-    )
-}
-
-fun List<Offset>.toFloatArray(): FloatArray {
-    return floatArrayOf(
-        this[0].x,
-        this[0].y,
-        this[1].x,
-        this[1].y,
-        this[2].x,
-        this[2].y,
-        this[3].x,
-        this[3].y
     )
 }

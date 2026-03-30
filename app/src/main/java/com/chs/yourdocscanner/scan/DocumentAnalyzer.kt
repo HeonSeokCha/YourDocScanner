@@ -7,7 +7,6 @@ import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.ImageProxy
 import androidx.compose.ui.geometry.Offset
 import com.chs.yourdocscanner.OpenCVBridge
-import com.chs.yourdocscanner.toNV21ByteArray
 
 class DocumentAnalyzer(
     private val onResult: (DetectedQuad?) -> Unit
@@ -15,11 +14,10 @@ class DocumentAnalyzer(
 
     @OptIn(ExperimentalGetImage::class)
     override fun analyze(image: ImageProxy) {
-        val yuv = image.toNV21ByteArray()
+        val rawBitmap = image.toBitmap()
 
-        val raw = OpenCVBridge.detectRectangles(yuv, image.width, image.height)
+        val raw = OpenCVBridge.detectRectangles(rawBitmap)
 
-        Log.e("CHS_123", raw.toString())
         val quad = if (raw != null && raw.size == 4) {
             DetectedQuad(
                 topLeft = Offset(raw[0].x.toFloat(), raw[0].y.toFloat()),
@@ -32,6 +30,7 @@ class DocumentAnalyzer(
             )
         } else null
 
+        rawBitmap.recycle()
         image.close()
         onResult(quad)
     }

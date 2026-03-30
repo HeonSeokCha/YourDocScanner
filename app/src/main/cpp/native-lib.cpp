@@ -68,7 +68,6 @@ bool validateQuad(
 
     double areaRatio = (area / imageArea);
     if (areaRatio < MIN_AREA_RATIO || areaRatio > MAX_AREA_RATIO) {
-        LOGE("%f", areaRatio);
         return false;
     }
     return true;
@@ -79,11 +78,15 @@ extern "C" JNIEXPORT jobject JNICALL
 Java_com_chs_yourdocscanner_OpenCVBridge_detectRectangles(
         JNIEnv *env,
         jobject thiz,
-        jbyteArray yuvData,
-        jint width,
-        jint height
+        jobject bitmapIn
 ) {
-    Mat src = yuvToBgr(env, yuvData, width, height);
+    AndroidBitmapInfo info;
+    AndroidBitmap_getInfo(env, bitmapIn, &info);
+
+    void *pixels;
+    AndroidBitmap_lockPixels(env, bitmapIn, &pixels);
+
+    Mat src(info.height, info.width, CV_8UC4, pixels);
 
     Mat gray;
     cvtColor(src, gray, COLOR_RGBA2GRAY);
@@ -93,14 +96,12 @@ Java_com_chs_yourdocscanner_OpenCVBridge_detectRectangles(
 
     Mat filtered;
     bilateralFilter(gray, filtered, 9, 75.0, 75.0);
-//    GaussianBlur(gray, gray, Size(5, 5), 0.0);
 
     Mat edges;
     autoCanny(filtered, edges, 0.33);
 
     Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
     dilate(edges, edges, kernel);
-//    Canny(gray, edges, 75.0, 200.0);
 
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
@@ -122,13 +123,14 @@ Java_com_chs_yourdocscanner_OpenCVBridge_detectRectangles(
         vector<Point2f> approx;
         approxPolyDP(contourF, approx, 0.02 * peri, true);
 
-        if (validateQuad(approx, width, height)) {
+        if (validateQuad(approx, info.width, info.height)) {
             docContour = approx;
             found = true;
             break;
         }
     }
 
+    AndroidBitmap_unlockPixels(env, bitmapIn);
     gray.release();
     edges.release();
 
@@ -175,14 +177,12 @@ Java_com_chs_yourdocscanner_OpenCVBridge_detectRectanglesFromBitmap(
 
     Mat filtered;
     bilateralFilter(gray, filtered, 9, 75.0, 75.0);
-//    GaussianBlur(gray, gray, Size(5, 5), 0.0);
 
     Mat edges;
     autoCanny(filtered, edges, 0.33);
 
     Mat kernel = getStructuringElement(MORPH_RECT, Size(3, 3));
     dilate(edges, edges, kernel);
-//    Canny(gray, edges, 75.0, 200.0);
 
     vector<vector<Point>> contours;
     vector<Vec4i> hierarchy;
@@ -222,7 +222,7 @@ Java_com_chs_yourdocscanner_OpenCVBridge_detectRectanglesFromBitmap(
     jmethodID alAdd = env->GetMethodID(alClass, "add", "(Ljava/lang/Object;)Z");
     jobject resultList = env->NewObject(alClass, alInit);
 
-    jclass ptClass = env->FindClass("android/graphics/Point");
+    jclass ptClass = env->FindClass("androidx/compose/ui/geometry/Offset");
     jmethodID ptInit = env->GetMethodID(ptClass, "<init>", "(II)V");
 
     for (const auto &pt: docContour) {

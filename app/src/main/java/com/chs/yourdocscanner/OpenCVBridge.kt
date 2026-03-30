@@ -2,21 +2,18 @@ package com.chs.yourdocscanner
 
 import android.graphics.Bitmap
 import android.graphics.Point
+import androidx.compose.ui.geometry.Offset
 
 object OpenCVBridge {
     init {
         System.loadLibrary("native-lib")
     }
 
-    external fun detectRectangles(
-        yuvData: ByteArray,
-        width: Int,
-        height: Int
-    ): List<Point>?
+    external fun detectRectangles(bitmap: Bitmap): List<Point>?
 
-    external fun detectRectanglesFromBitmap(bitmap: Bitmap): List<Point>?
+    external suspend fun detectRectanglesFromBitmap(bitmap: Bitmap): List<Offset>?
 
-    external fun warpDocument(
+    external suspend fun warpDocument(
         bitmap: Bitmap,
         points: FloatArray,
         isFlip: Boolean
